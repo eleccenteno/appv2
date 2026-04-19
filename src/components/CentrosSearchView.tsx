@@ -102,6 +102,11 @@ import {
   CircleDot,
   Plus,
   Trash2,
+  FileDown,
+  Sheet,
+  FileType,
+  FileArchive,
+  Table2,
 } from 'lucide-react';
 import {
   exportToExcel,
@@ -609,44 +614,133 @@ export default function CentrosSearchView() {
           </div>
         </div>
 
-        {/* Export Buttons */}
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleExport('csv')}
-            disabled={filteredCentros.length === 0 || !!exportLoading}
-          >
-            {exportLoading === 'csv' ? <div className="h-4 w-4 animate-spin border-2 border-current border-t-transparent rounded-full" /> : <File className="h-4 w-4" />}
-            <span className="ml-1 hidden sm:inline">CSV</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleExport('excel')}
-            disabled={filteredCentros.length === 0 || !!exportLoading}
-          >
-            {exportLoading === 'excel' ? <div className="h-4 w-4 animate-spin border-2 border-current border-t-transparent rounded-full" /> : <FileSpreadsheet className="h-4 w-4" />}
-            <span className="ml-1 hidden sm:inline">Excel</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleExport('pdf')}
-            disabled={filteredCentros.length === 0 || !!exportLoading}
-          >
-            {exportLoading === 'pdf' ? <div className="h-4 w-4 animate-spin border-2 border-current border-t-transparent rounded-full" /> : <FileText className="h-4 w-4" />}
-            <span className="ml-1 hidden sm:inline">PDF</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleExport('word')}
-            disabled={filteredCentros.length === 0 || !!exportLoading}
-          >
-            {exportLoading === 'word' ? <div className="h-4 w-4 animate-spin border-2 border-current border-t-transparent rounded-full" /> : <File className="h-4 w-4" />}
-            <span className="ml-1 hidden sm:inline">Word</span>
-          </Button>
+        {/* Export Section */}
+        <div className="flex items-center gap-2">
+          {/* Export Summary Badge */}
+          {filteredCentros.length > 0 && (
+            <Badge variant="outline" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-border/60 bg-muted/30">
+              <Database className="h-3 w-3" />
+              {filteredCentros.length} registros
+            </Badge>
+          )}
+
+          {/* Export Dropdown */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="default"
+                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/20 gap-2 h-10 px-4"
+                disabled={filteredCentros.length === 0 || !!exportLoading}
+              >
+                {exportLoading ? (
+                  <div className="h-4 w-4 animate-spin border-2 border-white/40 border-t-white rounded-full" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                <span className="font-semibold">Exportar</span>
+                <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[340px] p-2" align="end" sideOffset={8}>
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 pt-1 pb-2">
+                  Formato de exportación
+                </p>
+
+                {/* Excel */}
+                <button
+                  onClick={() => handleExport('excel')}
+                  disabled={!!exportLoading}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all duration-200 group cursor-pointer text-left"
+                >
+                  <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-md shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+                    <FileSpreadsheet className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-foreground">Excel</span>
+                      <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 font-bold">.XLSX</Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                      Hojas de cálculo con datos + resúmenes por provincia y prioridad
+                    </p>
+                  </div>
+                  <Download className="h-4 w-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+
+                {/* PDF */}
+                <button
+                  onClick={() => handleExport('pdf')}
+                  disabled={!!exportLoading}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-200 group cursor-pointer text-left"
+                >
+                  <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-md shadow-red-500/20 group-hover:scale-110 transition-transform">
+                    <FileText className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-foreground">PDF</span>
+                      <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 font-bold">.PDF</Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                      Documento A3 horizontal con tabla formateada y paginación
+                    </p>
+                  </div>
+                  <Download className="h-4 w-4 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+
+                {/* Word */}
+                <button
+                  onClick={() => handleExport('word')}
+                  disabled={!!exportLoading}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all duration-200 group cursor-pointer text-left"
+                >
+                  <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-110 transition-transform">
+                    <FileType className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-foreground">Word</span>
+                      <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 font-bold">.DOCX</Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                      Documento editable con tabla y estilos profesionales
+                    </p>
+                  </div>
+                  <Download className="h-4 w-4 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+
+                {/* CSV */}
+                <button
+                  onClick={() => handleExport('csv')}
+                  disabled={!!exportLoading}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-all duration-200 group cursor-pointer text-left"
+                >
+                  <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-md shadow-amber-500/20 group-hover:scale-110 transition-transform">
+                    <Table2 className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-foreground">CSV</span>
+                      <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 font-bold">.CSV</Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                      Datos en texto plano separado por comas, compatible con todo
+                    </p>
+                  </div>
+                  <Download className="h-4 w-4 text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+              </div>
+
+              {/* Footer info */}
+              <div className="mt-2 pt-2 border-t px-2">
+                <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <FileDown className="h-3 w-3" />
+                  Se exportarán {filteredCentros.length} centros con {selectedColumns.length} columnas
+                </p>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
