@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppStore, ViewType } from '@/lib/store';
-import { Users, Car, BarChart3, Edit, Shield, ChevronRight, Sparkles, Zap, Eye, Database } from 'lucide-react';
+import { Users, Car, BarChart3, Edit, Shield, ChevronRight, Sparkles, Zap, Eye, Database, HardDrive } from 'lucide-react';
 
 const menuCards: { icon: React.ElementType; label: string; view: ViewType; gradient: string; shadowColor: string; description: string; badge?: string; badgeGradient?: string }[] = [
   {
@@ -65,6 +65,16 @@ const menuCards: { icon: React.ElementType; label: string; view: ViewType; gradi
     gradient: 'from-violet-500 to-purple-600',
     shadowColor: 'shadow-violet-500/20',
     description: 'Editores de formularios y plantillas',
+  },
+  {
+    icon: HardDrive,
+    label: 'Copias de Seguridad',
+    view: 'backup',
+    gradient: 'from-emerald-500 to-teal-600',
+    shadowColor: 'shadow-emerald-500/20',
+    description: 'Crear y restaurar copias de seguridad',
+    badge: 'Nuevo',
+    badgeGradient: 'from-emerald-500 to-teal-600',
   },
 ];
 

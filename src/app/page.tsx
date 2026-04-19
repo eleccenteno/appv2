@@ -26,6 +26,7 @@ import VisorPreventivosView from '@/components/VisorPreventivosView';
 import TareasView from '@/components/TareasView';
 import VisorTareasView from '@/components/VisorTareasView';
 import TemasView from '@/components/TemasView';
+import BackupView from '@/components/BackupView';
 
 export default function Home() {
   const { isLoggedIn, currentUser, currentView } = useAppStore();
@@ -110,6 +111,10 @@ export default function Home() {
       // Temas
       case 'temas':
         return <TemasView />;
+
+      // Backup
+      case 'backup':
+        return <BackupView />;
 
       default:
         return <InicioView />;
