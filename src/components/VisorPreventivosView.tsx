@@ -269,7 +269,7 @@ export default function VisorPreventivosView() {
     }
     if (filterYear && filterYear !== 'todos') {
       const year = parseInt(filterYear);
-      result = result.filter(p => new Date(p.fecha).getFullYear() === year);
+      result = result.filter(p => p.fecha && new Date(p.fecha).getFullYear() === year);
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -626,9 +626,7 @@ function PreventivoCardModern({ preventivo, schema, onClick }: {
 }) {
   const estadoConfig = getEstadoConfig(preventivo.estado);
   const EstadoIcon = estadoConfig.icon;
-  const fecha = new Date(preventivo.fecha).toLocaleDateString('es-ES', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
+  const fecha = preventivo.fecha ? new Date(preventivo.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sin fecha';
 
   const { filledCount, totalFields, completionPct } = useMemo(() => {
     let filled = 0;
@@ -739,9 +737,7 @@ function PreventivoRowModern({ preventivo, schema, onClick }: {
 }) {
   const estadoConfig = getEstadoConfig(preventivo.estado);
   const EstadoIcon = estadoConfig.icon;
-  const fecha = new Date(preventivo.fecha).toLocaleDateString('es-ES', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
+  const fecha = preventivo.fecha ? new Date(preventivo.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sin fecha';
 
   const { filledCount, totalFields, completionPct } = useMemo(() => {
     let filled = 0;
@@ -862,10 +858,10 @@ function PreventivoDetailDialog({
 
   const estadoConfig = getEstadoConfig(preventivo.estado);
   const EstadoIcon = estadoConfig.icon;
-  const fecha = new Date(preventivo.fecha).toLocaleDateString('es-ES', {
-    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
-  });
-  const createdAt = new Date(preventivo.createdAt).toLocaleString('es-ES');
+  const fecha = preventivo.fecha
+    ? new Date(preventivo.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+    : 'Sin fecha';
+  const createdAt = preventivo.createdAt ? new Date(preventivo.createdAt).toLocaleString('es-ES') : '—';
 
   const formData: Record<string, string> = useMemo(() => {
     if (!preventivo.formData) return {};
@@ -1088,7 +1084,7 @@ function PreventivoDetailDialog({
                 </div>
               </div>
               <p className="text-sm text-muted-foreground mb-5">
-                Se eliminará permanentemente el preventivo de <strong className="text-foreground">{preventivo.centro?.nombre || preventivo.centro?.codigo}</strong> del día <strong className="text-foreground">{new Date(preventivo.fecha).toLocaleDateString('es-ES')}</strong>, incluyendo todas sus fotografías asociadas.
+                Se eliminará permanentemente el preventivo de <strong className="text-foreground">{preventivo.centro?.nombre || preventivo.centro?.codigo}</strong> del día <strong className="text-foreground">{preventivo.fecha ? new Date(preventivo.fecha).toLocaleDateString('es-ES') : 'Sin fecha'}</strong>, incluyendo todas sus fotografías asociadas.
               </p>
               <div className="flex items-center justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting} className="h-9">

@@ -41,7 +41,6 @@ export async function GET(request: NextRequest) {
         fotos: { orderBy: { createdAt: 'asc' } },
       },
       orderBy: [
-        { prioridad: 'desc' },
         { createdAt: 'desc' },
       ],
     });

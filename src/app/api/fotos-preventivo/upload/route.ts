@@ -110,12 +110,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Path es requerido' }, { status: 400 });
     }
 
-    // Security: prevent path traversal
+    // Security: prevent path traversal - use path.resolve for robust validation
     const sanitizedPath = relativePath.replace(/\.\./g, '').replace(/\\/g, '');
-    const filePath = path.join(PHOTOS_BASE_DIR, sanitizedPath);
+    const filePath = path.resolve(PHOTOS_BASE_DIR, sanitizedPath);
 
-    // Ensure the path is within our base directory
-    if (!filePath.startsWith(PHOTOS_BASE_DIR)) {
+    // Ensure the resolved path is within our base directory
+    if (!filePath.startsWith(path.resolve(PHOTOS_BASE_DIR))) {
       return NextResponse.json({ error: 'Path inválido' }, { status: 400 });
     }
 

@@ -210,7 +210,8 @@ export function useOfflineSync() {
 
             if (uploadRes.ok) {
               const uploadData = await uploadRes.json();
-              // Update the form field with the server path
+              // Update the form field with the server path (working on a copy)
+              if (!sub.form.fields) sub.form.fields = {};
               sub.form.fields[photo.fieldKey] = uploadData.apiPath;
             }
           } catch (photoErr) {

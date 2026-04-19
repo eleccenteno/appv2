@@ -28,7 +28,7 @@ import VisorTareasView from '@/components/VisorTareasView';
 import TemasView from '@/components/TemasView';
 
 export default function Home() {
-  const { isLoggedIn, currentUser, currentView, currentTheme } = useAppStore();
+  const { isLoggedIn, currentUser, currentView } = useAppStore();
 
   // Show login if not authenticated
   if (!isLoggedIn || !currentUser) {

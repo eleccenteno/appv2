@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useAppStore, ThemeName } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -95,9 +96,9 @@ export default function TemasView() {
   };
 
   // Apply current theme on mount
-  if (typeof document !== 'undefined') {
+  useEffect(() => {
     document.documentElement.setAttribute('data-theme', currentTheme);
-  }
+  }, [currentTheme]);
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">

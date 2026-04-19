@@ -318,7 +318,7 @@ export default function UsuariosView() {
               <DialogHeader>
                 <DialogTitle className="text-teal-800">Crear Nuevo Usuario</DialogTitle>
               </DialogHeader>
-              <UserForm formData={formData} setFormData={setFormData} onSave={handleCreate} saving={saving} isEdit={false} />
+              <UserForm formData={formData} setFormData={setFormData} onSave={handleCreate} onCancel={() => setCreateOpen(false)} saving={saving} isEdit={false} />
             </DialogContent>
           </Dialog>
         )}
@@ -608,7 +608,7 @@ export default function UsuariosView() {
           <DialogHeader>
             <DialogTitle className="text-teal-800">Editar Usuario</DialogTitle>
           </DialogHeader>
-          <UserForm formData={formData} setFormData={setFormData} onSave={handleEdit} saving={saving} isEdit={true} />
+          <UserForm formData={formData} setFormData={setFormData} onSave={handleEdit} onCancel={() => setEditOpen(false)} saving={saving} isEdit={true} />
         </DialogContent>
       </Dialog>
 
@@ -666,11 +666,12 @@ interface UserFormProps {
   formData: FormData;
   setFormData: React.Dispatch<React.SetStateAction<FormData>>;
   onSave: () => void;
+  onCancel: () => void;
   saving: boolean;
   isEdit: boolean;
 }
 
-function UserForm({ formData, setFormData, onSave, saving, isEdit }: UserFormProps) {
+function UserForm({ formData, setFormData, onSave, onCancel, saving, isEdit }: UserFormProps) {
   const updateField = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -823,7 +824,7 @@ function UserForm({ formData, setFormData, onSave, saving, isEdit }: UserFormPro
       </div>
 
       <div className="flex justify-end gap-3 pt-2">
-        <Button variant="outline" onClick={() => {}} className="border-teal-200">
+        <Button variant="outline" onClick={onCancel} className="border-teal-200">
           Cancelar
         </Button>
         <Button onClick={onSave} disabled={saving} className="bg-teal-600 hover:bg-teal-700 text-white gap-2">

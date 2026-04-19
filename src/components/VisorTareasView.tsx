@@ -300,7 +300,7 @@ export default function VisorTareasView() {
       const year = parseInt(filterYear);
       result = result.filter(t => {
         const dateStr = t.formData?.fecha || t.fechaLimite || t.createdAt;
-        return new Date(dateStr).getFullYear() === year;
+        return dateStr ? new Date(dateStr).getFullYear() === year : false;
       });
     }
     if (filterBlacklist && filterBlacklist !== 'todos') {
@@ -688,7 +688,7 @@ function StatCard({ icon: Icon, value, label, gradient, bgGlow, onClick, active 
             <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
           )}
         </div>
-        <p className={`text-2xl font-bold tracking-tight ${active ? 'text-foreground' : 'text-foreground'}`}>{value}</p>
+        <p className={`text-2xl font-bold tracking-tight text-foreground`}>{value}</p>
         <p className={`text-[11px] font-medium ${active ? 'text-foreground' : 'text-muted-foreground'}`}>{label}</p>
       </CardContent>
     </Card>
@@ -710,9 +710,9 @@ function TareaCardModern({ tarea, schema, onClick }: {
 
   // Get fecha from formData or fall back
   const fechaStr = tarea.formData?.fecha || tarea.fechaLimite || tarea.createdAt;
-  const fecha = new Date(fechaStr).toLocaleDateString('es-ES', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
+  const fecha = fechaStr
+    ? new Date(fechaStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+    : 'Sin fecha';
 
   const { filledCount, totalFields, completionPct } = useMemo(() => {
     let filled = 0;
@@ -845,9 +845,9 @@ function TareaRowModern({ tarea, schema, onClick }: {
   const EstadoIcon = estadoConfig.icon;
 
   const fechaStr = tarea.formData?.fecha || tarea.fechaLimite || tarea.createdAt;
-  const fecha = new Date(fechaStr).toLocaleDateString('es-ES', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
+  const fecha = fechaStr
+    ? new Date(fechaStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+    : 'Sin fecha';
 
   const { completionPct } = useMemo(() => {
     let filled = 0;
@@ -983,10 +983,10 @@ function TareaDetailDialog({
   const estadoConfig = getEstadoConfig(tarea.estado);
   const EstadoIcon = estadoConfig.icon;
   const fechaStr = tarea.formData?.fecha || tarea.fechaLimite || tarea.createdAt;
-  const fecha = new Date(fechaStr).toLocaleDateString('es-ES', {
-    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
-  });
-  const createdAt = new Date(tarea.createdAt).toLocaleString('es-ES');
+  const fecha = fechaStr
+    ? new Date(fechaStr).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+    : 'Sin fecha';
+  const createdAt = tarea.createdAt ? new Date(tarea.createdAt).toLocaleString('es-ES') : '—';
 
   const formData: Record<string, string> = useMemo(() => {
     if (!tarea.formData) return {};

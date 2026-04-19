@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useAppStore, ViewType, FontSizeLevel } from '@/lib/store';
 import {
   Home,
@@ -46,9 +47,11 @@ export default function Sidebar() {
   const { currentView, setCurrentView, currentUser, logout, sidebarOpen, setSidebarOpen, currentTheme, setTheme, darkMode, toggleDarkMode, fontSizeLevel, increaseFontSize, decreaseFontSize } = useAppStore();
 
   // Apply theme on mount
-  if (typeof document !== 'undefined' && currentTheme) {
-    document.documentElement.setAttribute('data-theme', currentTheme);
-  }
+  useEffect(() => {
+    if (currentTheme) {
+      document.documentElement.setAttribute('data-theme', currentTheme);
+    }
+  }, [currentTheme]);
 
   return (
     <>

@@ -264,8 +264,12 @@ export async function POST(request: NextRequest) {
         }
 
         // ---- Map to DB schema values ----
-        const dbEstado = estado === 'Realizado' ? 'Realizado' : 'Pendiente';
-        const dbTipo = t.tipoTarea || 'correctivo';
+        // Map estado to valid schema values: pendiente, en_progreso, completada, cancelada, blacklist
+        const dbEstado = estado === 'Realizado' ? 'completada' : 'pendiente';
+        // Validate tipo against schema: correctivo, preventivo, instalacion, reparacion, blacklist
+        const validTipos = ['correctivo', 'preventivo', 'instalacion', 'reparacion', 'blacklist'];
+        const rawTipo = (t.tipoTarea || 'correctivo').toLowerCase().trim();
+        const dbTipo = validTipos.includes(rawTipo) ? rawTipo : 'correctivo';
         const dbPrioridad = t.prioridadTarea === 'Red' ? 'alta'
           : t.prioridadTarea === 'Yellow' ? 'media'
           : t.prioridadTarea === 'Green' ? 'baja'
