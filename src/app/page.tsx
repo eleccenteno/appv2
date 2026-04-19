@@ -31,6 +31,7 @@ const VisorTareasView = dynamic(() => import('@/components/VisorTareasView'));
 const TemasView = dynamic(() => import('@/components/TemasView'));
 const BackupView = dynamic(() => import('@/components/BackupView'));
 const LogView = dynamic(() => import('@/components/LogView'));
+const CentrosSearchView = dynamic(() => import('@/components/CentrosSearchView'));
 
 export default function Home() {
   const { isLoggedIn, currentUser, currentView } = useAppStore();
@@ -123,6 +124,10 @@ export default function Home() {
       // Logs
       case 'logs':
         return <LogView />;
+
+      // Centros Search
+      case 'centros-search':
+        return <CentrosSearchView />;
 
       default:
         return <InicioView />;

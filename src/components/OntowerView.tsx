@@ -18,6 +18,7 @@ import {
   Eye,
   Zap,
   Lock,
+  Search,
 } from 'lucide-react';
 
 const funciones = [
@@ -46,6 +47,15 @@ const funciones = [
     icon: Database,
     gradient: 'from-cyan-500 to-sky-600',
     shadowColor: 'shadow-cyan-500/20',
+    funcional: true,
+  },
+  {
+    id: 'centros-search' as ViewType,
+    nombre: 'Búsqueda Avanzada',
+    descripcion: 'Filtrado multifiltro y exportación',
+    icon: Search,
+    gradient: 'from-amber-500 to-orange-600',
+    shadowColor: 'shadow-amber-500/20',
     funcional: true,
   },
   {

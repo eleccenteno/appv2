@@ -29,7 +29,8 @@ export type ViewType =
   | 'centros-editor'
   | 'temas'
   | 'backup'
-  | 'logs';
+  | 'logs'
+  | 'centros-search';
 
 export interface Employee {
   id: string;
