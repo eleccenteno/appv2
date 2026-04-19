@@ -1,32 +1,35 @@
 'use client';
 
 import { useAppStore } from '@/lib/store';
+import dynamic from 'next/dynamic';
 import LoginForm from '@/components/LoginForm';
 import Sidebar from '@/components/Sidebar';
 import BottomNav from '@/components/BottomNav';
 import DashboardHeader from '@/components/DashboardHeader';
-import InicioView from '@/components/InicioView';
-import PanelControl from '@/components/PanelControl';
-import PreventivosForm from '@/components/PreventivosForm';
-import ServicioTecnico from '@/components/ServicioTecnico';
-import CellnexView from '@/components/CellnexView';
-import InsyteView from '@/components/InsyteView';
-import CentenoView from '@/components/CentenoView';
-import OntowerView from '@/components/OntowerView';
-import RetevisionView from '@/components/RetevisionView';
-import AxionView from '@/components/AxionView';
-import GamesystemView from '@/components/GamesystemView';
-import PlaceholderView from '@/components/PlaceholderView';
-import DatosCentrosView from '@/components/DatosCentrosView';
-import UsuariosView from '@/components/UsuariosView';
-import FormEditorView from '@/components/FormEditorView';
-import CentrosEditorView from '@/components/CentrosEditorView';
-import EditorView from '@/components/EditorView';
-import VisorPreventivosView from '@/components/VisorPreventivosView';
-import TareasView from '@/components/TareasView';
-import VisorTareasView from '@/components/VisorTareasView';
-import TemasView from '@/components/TemasView';
-import BackupView from '@/components/BackupView';
+
+// Lazy load all view components to reduce initial bundle size
+const InicioView = dynamic(() => import('@/components/InicioView'));
+const PanelControl = dynamic(() => import('@/components/PanelControl'));
+const PreventivosForm = dynamic(() => import('@/components/PreventivosForm'));
+const ServicioTecnico = dynamic(() => import('@/components/ServicioTecnico'));
+const CellnexView = dynamic(() => import('@/components/CellnexView'));
+const InsyteView = dynamic(() => import('@/components/InsyteView'));
+const CentenoView = dynamic(() => import('@/components/CentenoView'));
+const OntowerView = dynamic(() => import('@/components/OntowerView'));
+const RetevisionView = dynamic(() => import('@/components/RetevisionView'));
+const AxionView = dynamic(() => import('@/components/AxionView'));
+const GamesystemView = dynamic(() => import('@/components/GamesystemView'));
+const PlaceholderView = dynamic(() => import('@/components/PlaceholderView'));
+const DatosCentrosView = dynamic(() => import('@/components/DatosCentrosView'));
+const UsuariosView = dynamic(() => import('@/components/UsuariosView'));
+const FormEditorView = dynamic(() => import('@/components/FormEditorView'));
+const CentrosEditorView = dynamic(() => import('@/components/CentrosEditorView'));
+const EditorView = dynamic(() => import('@/components/EditorView'));
+const VisorPreventivosView = dynamic(() => import('@/components/VisorPreventivosView'));
+const TareasView = dynamic(() => import('@/components/TareasView'));
+const VisorTareasView = dynamic(() => import('@/components/VisorTareasView'));
+const TemasView = dynamic(() => import('@/components/TemasView'));
+const BackupView = dynamic(() => import('@/components/BackupView'));
 
 export default function Home() {
   const { isLoggedIn, currentUser, currentView } = useAppStore();
