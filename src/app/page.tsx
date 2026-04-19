@@ -32,6 +32,7 @@ const TemasView = dynamic(() => import('@/components/TemasView'));
 const BackupView = dynamic(() => import('@/components/BackupView'));
 const LogView = dynamic(() => import('@/components/LogView'));
 const CentrosSearchView = dynamic(() => import('@/components/CentrosSearchView'));
+const MapView = dynamic(() => import('@/components/MapView'), { ssr: false });
 
 export default function Home() {
   const { isLoggedIn, currentUser, currentView } = useAppStore();
@@ -79,7 +80,7 @@ export default function Home() {
       case 'datos-centros':
         return <DatosCentrosView />;
       case 'mapa':
-        return <PlaceholderView title="Mapa" subtitle="OnTower" color="text-emerald-700" />;
+        return <MapView />;
       case 'mapa-tareas':
         return <PlaceholderView title="Mapa Tareas Pendientes" subtitle="OnTower" color="text-amber-700" />;
       case 'manuales':
@@ -142,7 +143,7 @@ export default function Home() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen lg:min-h-0">
         <DashboardHeader user={currentUser} />
-        <main className="flex-1 pb-20 lg:pb-6 overflow-y-auto custom-scrollbar">
+        <main className={`flex-1 pb-20 lg:pb-6 ${currentView === 'mapa' ? 'overflow-hidden' : 'overflow-y-auto'} custom-scrollbar`}>
           {renderContent()}
         </main>
       </div>

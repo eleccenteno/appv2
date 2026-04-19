@@ -379,3 +379,72 @@ html.font-size-xlarge {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: oklch(0.55 0.12 220);
 }
+
+/* ============================================================
+   LEAFLET MAP OVERRIDES — Custom markers and cluster styles
+   ============================================================ */
+
+/* Remove default leaflet marker bg */
+.custom-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-cluster {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Leaflet tooltip override */
+.leaflet-tooltip {
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  font-family: inherit !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+  font-size: 12px !important;
+}
+
+.leaflet-tooltip-top::before {
+  border-top-color: rgba(0,0,0,0.08) !important;
+}
+
+/* Leaflet popup override */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px !important;
+  font-family: inherit !important;
+}
+
+/* Leaflet controls styling */
+.leaflet-control-zoom {
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+}
+
+.leaflet-control-zoom a {
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 18px !important;
+  color: #374151 !important;
+  background: white !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: #f3f4f6 !important;
+}
+
+/* Attribution styling */
+.leaflet-control-attribution {
+  font-size: 10px !important;
+  background: rgba(255,255,255,0.7) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px 0 0 0 !important;
+}

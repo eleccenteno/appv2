@@ -115,11 +115,11 @@ const funciones = [
   {
     id: 'mapa' as ViewType,
     nombre: 'Mapa',
-    descripcion: 'Vista geográfica',
+    descripcion: 'Mapa interactivo de centros',
     icon: Map,
     gradient: 'from-emerald-500 to-green-600',
     shadowColor: 'shadow-emerald-500/20',
-    funcional: false,
+    funcional: true,
   },
   {
     id: 'mapa-tareas' as ViewType,
