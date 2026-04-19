@@ -1,0 +1,1166 @@
+[
+  {
+    "key": "general",
+    "label": "General",
+    "columns": [
+      {
+        "index": 0,
+        "key": "col_0",
+        "label": "Nombre del centro",
+        "type": "Text"
+      },
+      {
+        "index": 1,
+        "key": "col_1",
+        "label": "Codigo info",
+        "type": "Text"
+      },
+      {
+        "index": 2,
+        "key": "col_2",
+        "label": "Provincia",
+        "type": "Enum"
+      },
+      {
+        "index": 3,
+        "key": "col_3",
+        "label": "Prioridad",
+        "type": "Enum"
+      },
+      {
+        "index": 4,
+        "key": "col_4",
+        "label": "Proyecto",
+        "type": "Enum"
+      },
+      {
+        "index": 5,
+        "key": "col_5",
+        "label": "Tipo centro",
+        "type": "Enum"
+      },
+      {
+        "index": 6,
+        "key": "col_6",
+        "label": "Localizacion centro",
+        "type": "LatLong"
+      }
+    ]
+  },
+  {
+    "key": "suministro_electrico",
+    "label": "Suministro Eléctrico",
+    "columns": [
+      {
+        "index": 7,
+        "key": "col_7",
+        "label": "DATOS INTERESSUMINISTRO ELECTRICO",
+        "type": "Show"
+      },
+      {
+        "index": 8,
+        "key": "col_8",
+        "label": "Tipo de suminstro electrico",
+        "type": "Enum"
+      },
+      {
+        "index": 9,
+        "key": "col_9",
+        "label": "De donde cogemos el suministro?",
+        "type": "LongText"
+      },
+      {
+        "index": 10,
+        "key": "col_10",
+        "label": "Comercializadora",
+        "type": "Enum"
+      },
+      {
+        "index": 11,
+        "key": "col_11",
+        "label": "CUPS",
+        "type": "LongText"
+      },
+      {
+        "index": 12,
+        "key": "col_12",
+        "label": "Telefono comercializadora/responsable",
+        "type": "Phone"
+      },
+      {
+        "index": 13,
+        "key": "col_13",
+        "label": "Contacto comercializadora/responsable",
+        "type": "Text"
+      },
+      {
+        "index": 14,
+        "key": "col_14",
+        "label": "CIF ONTOWER/RETEVISION",
+        "type": "LongText"
+      },
+      {
+        "index": 15,
+        "key": "col_15",
+        "label": "Localizacion contador",
+        "type": "LatLong"
+      },
+      {
+        "index": 16,
+        "key": "col_16",
+        "label": "Tipo de linea del centro",
+        "type": "Enum"
+      },
+      {
+        "index": 17,
+        "key": "col_17",
+        "label": "Tipo de linea de acometida",
+        "type": "Enum"
+      },
+      {
+        "index": 18,
+        "key": "col_18",
+        "label": "Estado de acometida",
+        "type": "Enum"
+      },
+      {
+        "index": 19,
+        "key": "col_19",
+        "label": "Motivo deficiencia acometida",
+        "type": "LongText"
+      },
+      {
+        "index": 20,
+        "key": "col_20",
+        "label": "Propietario grupo",
+        "type": "Enum"
+      }
+    ]
+  },
+  {
+    "key": "remota",
+    "label": "Remota",
+    "columns": [
+      {
+        "index": 21,
+        "key": "col_21",
+        "label": "DATOS INTERES REMOTA",
+        "type": "Show"
+      },
+      {
+        "index": 22,
+        "key": "col_22",
+        "label": "Remota",
+        "type": "Enum"
+      },
+      {
+        "index": 23,
+        "key": "col_23",
+        "label": "Tarjeta SIM",
+        "type": "Enum"
+      },
+      {
+        "index": 24,
+        "key": "col_24",
+        "label": "Nº Telefono Tarjeta SIM",
+        "type": "Phone"
+      },
+      {
+        "index": 25,
+        "key": "col_25",
+        "label": "IP remota",
+        "type": "Text"
+      }
+    ]
+  },
+  {
+    "key": "evcc",
+    "label": "EVCC",
+    "columns": [
+      {
+        "index": 26,
+        "key": "col_26",
+        "label": "DATOS INTERES EVCC",
+        "type": "Show"
+      },
+      {
+        "index": 27,
+        "key": "col_27",
+        "label": "EVCC",
+        "type": "Enum"
+      },
+      {
+        "index": 28,
+        "key": "col_28",
+        "label": "Rectificadores",
+        "type": "Number"
+      },
+      {
+        "index": 29,
+        "key": "col_29",
+        "label": "Rectificadores maximos",
+        "type": "Number"
+      },
+      {
+        "index": 30,
+        "key": "col_30",
+        "label": "Limitacion de carga EVCC",
+        "type": "Enum"
+      },
+      {
+        "index": 31,
+        "key": "col_31",
+        "label": "Existen baterias?",
+        "type": "Enum"
+      },
+      {
+        "index": 32,
+        "key": "col_32",
+        "label": "Marca Baterias",
+        "type": "Enum"
+      },
+      {
+        "index": 33,
+        "key": "col_33",
+        "label": "Bancadas",
+        "type": "Number"
+      },
+      {
+        "index": 34,
+        "key": "col_34",
+        "label": "Numero Baterias",
+        "type": "Number"
+      },
+      {
+        "index": 35,
+        "key": "col_35",
+        "label": "Fecha instalacion baterias",
+        "type": "Date"
+      },
+      {
+        "index": 36,
+        "key": "col_36",
+        "label": "Estado de las baterias",
+        "type": "Enum"
+      }
+    ]
+  },
+  {
+    "key": "aa",
+    "label": "Aire Acondicionado",
+    "columns": [
+      {
+        "index": 37,
+        "key": "col_37",
+        "label": "DATOS INTERES A.A",
+        "type": "Show"
+      },
+      {
+        "index": 38,
+        "key": "col_38",
+        "label": "Dispone de A/A?",
+        "type": "Enum"
+      },
+      {
+        "index": 39,
+        "key": "col_39",
+        "label": "Cuantas maquinas de A/A dispone el centro?",
+        "type": "EnumList"
+      },
+      {
+        "index": 40,
+        "key": "col_40",
+        "label": "Tipo de maquina (Solo la principal, la mas 'nueva')",
+        "type": "Enum"
+      },
+      {
+        "index": 41,
+        "key": "col_41",
+        "label": "MAQUINA PRINCIPAL",
+        "type": "Show"
+      },
+      {
+        "index": 42,
+        "key": "col_42",
+        "label": "Marca A/A principal exterior",
+        "type": "Enum"
+      },
+      {
+        "index": 43,
+        "key": "col_43",
+        "label": "Modelo A/A principal exterior",
+        "type": "Enum"
+      },
+      {
+        "index": 44,
+        "key": "col_44",
+        "label": "Numero de Serie A/A principal Exterior",
+        "type": "Text"
+      },
+      {
+        "index": 45,
+        "key": "col_45",
+        "label": "Tipo de Gas Refrigerante",
+        "type": "Enum"
+      },
+      {
+        "index": 46,
+        "key": "col_46",
+        "label": "Kg de Gas Refrigerante",
+        "type": "Decimal"
+      },
+      {
+        "index": 47,
+        "key": "col_47",
+        "label": "Esta correctamente el sellado?",
+        "type": "Enum"
+      },
+      {
+        "index": 48,
+        "key": "col_48",
+        "label": "Modelo A/A principal interior",
+        "type": "Enum"
+      },
+      {
+        "index": 49,
+        "key": "col_49",
+        "label": "Numero de Serie A/A principal Interior",
+        "type": "Text"
+      },
+      {
+        "index": 50,
+        "key": "col_50",
+        "label": "Correcto funcionamiento de A/A",
+        "type": "Enum"
+      },
+      {
+        "index": 51,
+        "key": "col_51",
+        "label": "Motivo de por que no es correcto.",
+        "type": "LongText"
+      },
+      {
+        "index": 52,
+        "key": "col_52",
+        "label": "MAQUINA SECUNDARIA",
+        "type": "Show"
+      },
+      {
+        "index": 53,
+        "key": "col_53",
+        "label": "¿Correcto funcionamiento A/A secundario?",
+        "type": "Enum"
+      },
+      {
+        "index": 54,
+        "key": "col_54",
+        "label": "Motivo de por que no es correcto A/A secundario.",
+        "type": "LongText"
+      },
+      {
+        "index": 55,
+        "key": "col_55",
+        "label": "Marca A/A secundario exterior",
+        "type": "Enum"
+      },
+      {
+        "index": 56,
+        "key": "col_56",
+        "label": "Modelo A/A secundario exterior",
+        "type": "Enum"
+      },
+      {
+        "index": 57,
+        "key": "col_57",
+        "label": "Numero de Serie A/A Secundario Exterior",
+        "type": "Text"
+      },
+      {
+        "index": 58,
+        "key": "col_58",
+        "label": "Tipo de Gas Refrigerante secundario",
+        "type": "Enum"
+      },
+      {
+        "index": 59,
+        "key": "col_59",
+        "label": "Kg de Gas Refrigerante secundario",
+        "type": "Decimal"
+      },
+      {
+        "index": 60,
+        "key": "col_60",
+        "label": "Modelo A/A secundario interior",
+        "type": "Enum"
+      },
+      {
+        "index": 61,
+        "key": "col_61",
+        "label": "Numero de Serie A/A Secundario Interior",
+        "type": "Text"
+      },
+      {
+        "index": 62,
+        "key": "col_62",
+        "label": "MAQUINA DE CONTINGENCIA",
+        "type": "Show"
+      },
+      {
+        "index": 63,
+        "key": "col_63",
+        "label": "A/A contingencia",
+        "type": "Enum"
+      },
+      {
+        "index": 64,
+        "key": "col_64",
+        "label": "Marca A/A contingencia",
+        "type": "Enum"
+      },
+      {
+        "index": 65,
+        "key": "col_65",
+        "label": "SONDAS DE TEMPERATURA",
+        "type": "Show"
+      },
+      {
+        "index": 66,
+        "key": "col_66",
+        "label": "¿Correcta orientacion de la sonda? (Cara norte)",
+        "type": "Enum"
+      },
+      {
+        "index": 67,
+        "key": "col_67",
+        "label": "Titulo Extraccion",
+        "type": "Show"
+      },
+      {
+        "index": 68,
+        "key": "col_68",
+        "label": "Dispone de extraccion?",
+        "type": "Enum"
+      },
+      {
+        "index": 69,
+        "key": "col_69",
+        "label": "Tipo de extraccion de aire",
+        "type": "Enum"
+      },
+      {
+        "index": 70,
+        "key": "col_70",
+        "label": "Dispone de filtro FC?",
+        "type": "Enum"
+      }
+    ]
+  },
+  {
+    "key": "torre",
+    "label": "Torre",
+    "columns": [
+      {
+        "index": 71,
+        "key": "col_71",
+        "label": "DATOS INTERES TORRE",
+        "type": "Show"
+      },
+      {
+        "index": 72,
+        "key": "col_72",
+        "label": "Altura torre",
+        "type": "Enum"
+      },
+      {
+        "index": 73,
+        "key": "col_73",
+        "label": "Tipo de escaleras",
+        "type": "Enum"
+      },
+      {
+        "index": 74,
+        "key": "col_74",
+        "label": "Estado pintura de la torre",
+        "type": "Enum"
+      },
+      {
+        "index": 75,
+        "key": "col_75",
+        "label": "Tiene pararrayos?",
+        "type": "Enum"
+      },
+      {
+        "index": 76,
+        "key": "col_76",
+        "label": "Consta de 5 puntas?",
+        "type": "Enum"
+      }
+    ]
+  },
+  {
+    "key": "gamesystem",
+    "label": "GameSystem",
+    "columns": [
+      {
+        "index": 77,
+        "key": "col_77",
+        "label": "GAMESYSTEM",
+        "type": "Show"
+      },
+      {
+        "index": 78,
+        "key": "col_78",
+        "label": "Tipo de linea de vida",
+        "type": "Enum"
+      },
+      {
+        "index": 79,
+        "key": "col_79",
+        "label": "Estado linea de vida",
+        "type": "Enum"
+      },
+      {
+        "index": 80,
+        "key": "col_80",
+        "label": "Proxima revision linea de vida",
+        "type": "Text"
+      }
+    ]
+  },
+  {
+    "key": "nidos",
+    "label": "Nidos",
+    "columns": [
+      {
+        "index": 81,
+        "key": "col_81",
+        "label": "NIDOS",
+        "type": "Show"
+      },
+      {
+        "index": 82,
+        "key": "col_82",
+        "label": "¿Hay nidos de cigueña en la torre?",
+        "type": "Enum"
+      },
+      {
+        "index": 83,
+        "key": "col_83",
+        "label": "Numero de nidos",
+        "type": "Number"
+      },
+      {
+        "index": 84,
+        "key": "col_84",
+        "label": "Existe cesta para los nidos?",
+        "type": "Enum"
+      },
+      {
+        "index": 85,
+        "key": "col_85",
+        "label": "Hay nidos en el interior de la cesta?",
+        "type": "Enum"
+      },
+      {
+        "index": 86,
+        "key": "col_86",
+        "label": "Observaciones sobre los nidos",
+        "type": "LongText"
+      }
+    ]
+  },
+  {
+    "key": "infraestructura",
+    "label": "Infraestructura",
+    "columns": [
+      {
+        "index": 87,
+        "key": "col_87",
+        "label": "DATOS INTERES INFRAESTRUCTURA",
+        "type": "Show"
+      },
+      {
+        "index": 88,
+        "key": "col_88",
+        "label": "Parcela o edificio",
+        "type": "Enum"
+      },
+      {
+        "index": 89,
+        "key": "col_89",
+        "label": "¿Existe Candado para la cancilla de acceso al camino?",
+        "type": "Enum"
+      },
+      {
+        "index": 90,
+        "key": "col_90",
+        "label": "Tipo de candado para la cancilla de acceso al camino",
+        "type": "Enum"
+      },
+      {
+        "index": 91,
+        "key": "col_91",
+        "label": "Acceso Restringido",
+        "type": "Enum"
+      },
+      {
+        "index": 92,
+        "key": "col_92",
+        "label": "4x4",
+        "type": "Enum"
+      },
+      {
+        "index": 93,
+        "key": "col_93",
+        "label": "¿Dispone de cilindro Locken?",
+        "type": "Enum"
+      },
+      {
+        "index": 94,
+        "key": "col_94",
+        "label": "¿Existe Candado para la cancilla de acceso al recinto?",
+        "type": "Enum"
+      },
+      {
+        "index": 95,
+        "key": "col_95",
+        "label": "Tipo de Candado para la cancilla de acceso al recinto",
+        "type": "Enum"
+      },
+      {
+        "index": 96,
+        "key": "col_96",
+        "label": "Estado de puerta de acceso al centro",
+        "type": "Enum"
+      },
+      {
+        "index": 97,
+        "key": "col_97",
+        "label": "¿Disponde de barra antivandalica?",
+        "type": "Enum"
+      },
+      {
+        "index": 98,
+        "key": "col_98",
+        "label": "Tipo candado barra antivandalica",
+        "type": "Enum"
+      },
+      {
+        "index": 99,
+        "key": "col_99",
+        "label": "¿Existe cerradura para el acceso al centro?",
+        "type": "Enum"
+      },
+      {
+        "index": 100,
+        "key": "col_100",
+        "label": "Estado cerrradura de acceso al centro",
+        "type": "Enum"
+      },
+      {
+        "index": 101,
+        "key": "col_101",
+        "label": "Tipo de cerradura para el acceso al centro",
+        "type": "Enum"
+      },
+      {
+        "index": 102,
+        "key": "col_102",
+        "label": "Funciona Correctamente el Sensor de puerta?",
+        "type": "Enum"
+      },
+      {
+        "index": 103,
+        "key": "col_103",
+        "label": "Estado general del vallado",
+        "type": "Enum"
+      },
+      {
+        "index": 104,
+        "key": "col_104",
+        "label": "Se repara vallado en la realizacion del preventivo?",
+        "type": "Enum"
+      },
+      {
+        "index": 105,
+        "key": "col_105",
+        "label": "Tipo de terreno recinto centro.",
+        "type": "Enum"
+      },
+      {
+        "index": 106,
+        "key": "col_106",
+        "label": "¿Necesita desbroce?",
+        "type": "Enum"
+      },
+      {
+        "index": 107,
+        "key": "col_107",
+        "label": "Se ha desbrozado?",
+        "type": "Enum"
+      },
+      {
+        "index": 108,
+        "key": "col_108",
+        "label": "Aplicacion de herbicida",
+        "type": "Enum"
+      },
+      {
+        "index": 109,
+        "key": "col_109",
+        "label": "Tipo de herbicida utilizado.",
+        "type": "Enum"
+      },
+      {
+        "index": 110,
+        "key": "col_110",
+        "label": "Vegetacion que requiera otros procedimientos",
+        "type": "Enum"
+      },
+      {
+        "index": 111,
+        "key": "col_111",
+        "label": "Chatarra en el centro",
+        "type": "Enum"
+      }
+    ]
+  },
+  {
+    "key": "coubicados",
+    "label": "Coubicados",
+    "columns": [
+      {
+        "index": 112,
+        "key": "col_112",
+        "label": "DATOS INTERES COUBICADOS",
+        "type": "Show"
+      },
+      {
+        "index": 113,
+        "key": "col_113",
+        "label": "EQUIPOS EXTERIORES",
+        "type": "Show"
+      },
+      {
+        "index": 114,
+        "key": "col_114",
+        "label": "¿Dispone de equipos de compañias exteriores?",
+        "type": "Enum"
+      },
+      {
+        "index": 115,
+        "key": "col_115",
+        "label": "Compañias coubicada en el exterior",
+        "type": "Enum"
+      },
+      {
+        "index": 116,
+        "key": "col_116",
+        "label": "EQUIPOS INTERIORES",
+        "type": "Show"
+      },
+      {
+        "index": 117,
+        "key": "col_117",
+        "label": "¿Dispone de equipos de compañias interiores?",
+        "type": "Enum"
+      },
+      {
+        "index": 118,
+        "key": "col_118",
+        "label": "Compañias coubicada en el interior",
+        "type": "Enum"
+      },
+      {
+        "index": 119,
+        "key": "col_119",
+        "label": "Nombre de la compañia interior",
+        "type": "Enum"
+      }
+    ]
+  },
+  {
+    "key": "cuadro_electrico",
+    "label": "Cuadro Eléctrico",
+    "columns": [
+      {
+        "index": 120,
+        "key": "col_120",
+        "label": "DATOS INTERES CUADRO ELECTRICO",
+        "type": "Show"
+      },
+      {
+        "index": 121,
+        "key": "col_121",
+        "label": "Esta bien realizado el reparto de cargas en el cuadro electrico? (poner climatizador en marcha donde exista)",
+        "type": "Enum"
+      },
+      {
+        "index": 122,
+        "key": "col_122",
+        "label": "Total CV-MINI Cuadro electrico.",
+        "type": "Number"
+      },
+      {
+        "index": 123,
+        "key": "col_123",
+        "label": "Tipo de alimentacion Movistar Exterior.",
+        "type": "Enum"
+      },
+      {
+        "index": 124,
+        "key": "col_124",
+        "label": "Tipo de alimentacion Orange Exterior.",
+        "type": "Enum"
+      },
+      {
+        "index": 125,
+        "key": "col_125",
+        "label": "Tipo de alimentacion Vodafone Exterior.",
+        "type": "Enum"
+      },
+      {
+        "index": 126,
+        "key": "col_126",
+        "label": "Tipo de alimentacion Yoigo Exterior.",
+        "type": "Enum"
+      },
+      {
+        "index": 127,
+        "key": "col_127",
+        "label": "Tipo de alimentacion Otros Exterior.",
+        "type": "Enum"
+      },
+      {
+        "index": 128,
+        "key": "col_128",
+        "label": "Tipo de alimentacion Movistar Interior.",
+        "type": "Enum"
+      },
+      {
+        "index": 129,
+        "key": "col_129",
+        "label": "Tipo de alimentacion Orange Interior.",
+        "type": "Enum"
+      },
+      {
+        "index": 130,
+        "key": "col_130",
+        "label": "Tipo de alimentacion Vodafone Interior.",
+        "type": "Enum"
+      },
+      {
+        "index": 131,
+        "key": "col_131",
+        "label": "Tipo de alimentacion Yoigo Interior.",
+        "type": "Enum"
+      },
+      {
+        "index": 132,
+        "key": "col_132",
+        "label": "Tipo de alimentacion Otros Interior.",
+        "type": "Enum"
+      },
+      {
+        "index": 133,
+        "key": "col_133",
+        "label": "Diodo colocado",
+        "type": "Enum"
+      },
+      {
+        "index": 134,
+        "key": "col_134",
+        "label": "Se ha cableado/instalado sensor en la puerta del cuadro electrico?",
+        "type": "Enum"
+      }
+    ]
+  },
+  {
+    "key": "enlaces",
+    "label": "Enlaces",
+    "columns": [
+      {
+        "index": 135,
+        "key": "col_135",
+        "label": "DATOS INTERES ENLACES",
+        "type": "Show"
+      },
+      {
+        "index": 136,
+        "key": "col_136",
+        "label": "Existen enlaces en el centro?",
+        "type": "Enum"
+      },
+      {
+        "index": 137,
+        "key": "col_137",
+        "label": "Numero de enlaces",
+        "type": "Number"
+      },
+      {
+        "index": 138,
+        "key": "col_138",
+        "label": "Numero de Vano 1",
+        "type": "Text"
+      },
+      {
+        "index": 139,
+        "key": "col_139",
+        "label": "Marca equipo 1",
+        "type": "Text"
+      },
+      {
+        "index": 140,
+        "key": "col_140",
+        "label": "Modelo equipo 1",
+        "type": "Text"
+      },
+      {
+        "index": 141,
+        "key": "col_141",
+        "label": "Numero de Vano 2",
+        "type": "Text"
+      },
+      {
+        "index": 142,
+        "key": "col_142",
+        "label": "Marca equipo 2",
+        "type": "Text"
+      },
+      {
+        "index": 143,
+        "key": "col_143",
+        "label": "Modelo equipo 2",
+        "type": "Text"
+      },
+      {
+        "index": 144,
+        "key": "col_144",
+        "label": "Numero de Vano 3",
+        "type": "Text"
+      },
+      {
+        "index": 145,
+        "key": "col_145",
+        "label": "Marca equipo 3",
+        "type": "Text"
+      },
+      {
+        "index": 146,
+        "key": "col_146",
+        "label": "Modelo equipo 3",
+        "type": "Text"
+      },
+      {
+        "index": 147,
+        "key": "col_147",
+        "label": "Numero de Vano 4",
+        "type": "Text"
+      },
+      {
+        "index": 148,
+        "key": "col_148",
+        "label": "Marca equipo 4",
+        "type": "Text"
+      },
+      {
+        "index": 149,
+        "key": "col_149",
+        "label": "Modelo equipo 4",
+        "type": "Text"
+      },
+      {
+        "index": 150,
+        "key": "col_150",
+        "label": "Numero de Vano 5",
+        "type": "Text"
+      },
+      {
+        "index": 151,
+        "key": "col_151",
+        "label": "Marca equipo 5",
+        "type": "Text"
+      },
+      {
+        "index": 152,
+        "key": "col_152",
+        "label": "Modelo equipo 5",
+        "type": "Text"
+      },
+      {
+        "index": 153,
+        "key": "col_153",
+        "label": "Numero de Vano 6",
+        "type": "Text"
+      },
+      {
+        "index": 154,
+        "key": "col_154",
+        "label": "Marca equipo 6",
+        "type": "Text"
+      },
+      {
+        "index": 155,
+        "key": "col_155",
+        "label": "Modelo equipo 6",
+        "type": "Text"
+      },
+      {
+        "index": 156,
+        "key": "col_156",
+        "label": "Numero de Vano 7",
+        "type": "Text"
+      },
+      {
+        "index": 157,
+        "key": "col_157",
+        "label": "Marca equipo 7",
+        "type": "Text"
+      },
+      {
+        "index": 158,
+        "key": "col_158",
+        "label": "Modelo equipo 7",
+        "type": "Text"
+      },
+      {
+        "index": 159,
+        "key": "col_159",
+        "label": "Numero de Vano 8",
+        "type": "Text"
+      },
+      {
+        "index": 160,
+        "key": "col_160",
+        "label": "Marca equipo 8",
+        "type": "Text"
+      },
+      {
+        "index": 161,
+        "key": "col_161",
+        "label": "Modelo equipo 8",
+        "type": "Text"
+      },
+      {
+        "index": 162,
+        "key": "col_162",
+        "label": "Numero de Vano 9",
+        "type": "Text"
+      },
+      {
+        "index": 163,
+        "key": "col_163",
+        "label": "Marca equipo 9",
+        "type": "Text"
+      },
+      {
+        "index": 164,
+        "key": "col_164",
+        "label": "Modelo equipo 9",
+        "type": "Text"
+      },
+      {
+        "index": 165,
+        "key": "col_165",
+        "label": "Numero de Vano 10",
+        "type": "Text"
+      },
+      {
+        "index": 166,
+        "key": "col_166",
+        "label": "Marca equipo 10",
+        "type": "Text"
+      },
+      {
+        "index": 167,
+        "key": "col_167",
+        "label": "Modelo equipo 10",
+        "type": "Text"
+      }
+    ]
+  },
+  {
+    "key": "sigfox",
+    "label": "Sigfox",
+    "columns": [
+      {
+        "index": 168,
+        "key": "col_168",
+        "label": "DATOS INTERES SIGFOX",
+        "type": "Show"
+      },
+      {
+        "index": 169,
+        "key": "col_169",
+        "label": "Dispone de equipos Sigfox?",
+        "type": "Enum"
+      },
+      {
+        "index": 170,
+        "key": "col_170",
+        "label": "Modelo Sigfox",
+        "type": "Enum"
+      }
+    ]
+  },
+  {
+    "key": "fotovoltaica",
+    "label": "Fotovoltaica",
+    "columns": [
+      {
+        "index": 171,
+        "key": "col_171",
+        "label": "DATOS INTERES FOTOVOLTAICA",
+        "type": "Show"
+      },
+      {
+        "index": 172,
+        "key": "col_172",
+        "label": "Instalacion Fotovoltaica",
+        "type": "Enum"
+      },
+      {
+        "index": 173,
+        "key": "col_173",
+        "label": "Tipo de inversor",
+        "type": "Enum"
+      },
+      {
+        "index": 174,
+        "key": "col_174",
+        "label": "Modelo inversor Fotovoltaica",
+        "type": "Enum"
+      },
+      {
+        "index": 175,
+        "key": "col_175",
+        "label": "Modelo EVCC Fotovoltaica",
+        "type": "Enum"
+      },
+      {
+        "index": 176,
+        "key": "col_176",
+        "label": "Rectificadores EVCC Fotovoltaica",
+        "type": "Number"
+      },
+      {
+        "index": 177,
+        "key": "col_177",
+        "label": "Rectificadores maximos EVCC Fotovoltaica",
+        "type": "Number"
+      },
+      {
+        "index": 178,
+        "key": "col_178",
+        "label": "Numero de paneles instalacion fotovoltaica",
+        "type": "Number"
+      },
+      {
+        "index": 179,
+        "key": "col_179",
+        "label": "Observaciones sobre la Instalacion Fotovoltaica",
+        "type": "LongText"
+      }
+    ]
+  }
+]

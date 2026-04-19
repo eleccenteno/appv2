@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// EMPRESAS Y ORGANIZACIÓN
+// ============================================================
+
+model Empresa {
+  id          String       @id @default(cuid())
+  nombre      String       @unique
+  slug        String       @unique
+  logo        String?
+  descripcion String?
+  activa      Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  subEmpresas SubEmpresa[]
+  centros     Centro[]
+  vehiculos   Vehiculo[]
+}
+
+model SubEmpresa {
+  id          String   @id @default(cuid())
+  nombre      String
+  slug        String   @unique
+  logo        String?
+  descripcion String?
+  activa      Boolean  @default(true)
+  empresaId   String
+  empresa     Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  centros     Centro[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([empresaId, slug])
+}
+
+// ============================================================
+// CENTROS / INSTALACIONES
+// ============================================================
+
+model Centro {
+  id                  String      @id @default(cuid())
+  codigo              String      @unique
+  nombre              String
+  direccion           String?
+  ciudad              String?
+  provincia           String?
+  codigoPostal        String?
+  latitud             Float?
+  longitud            Float?
+  tipoSuministro      String?
+  parcelaEdificio     String?
+  observaciones       String?
+  activo              Boolean     @default(true)
+  empresaId           String
+  subEmpresaId        String?
+  empresa             Empresa     @relation(fields: [empresaId], references: [id])
+  subEmpresa          SubEmpresa? @relation(fields: [subEmpresaId], references: [id])
+  preventivos         Preventivo[]
+  tareas              Tarea[]
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  @@index([empresaId])
+  @@index([subEmpresaId])
+  @@index([ciudad])
+  @@index([activo])
+}
+
+// ============================================================
+// EMPLEADOS
+// ============================================================
+
+model Employee {
+  id              String   @id @default(cuid())
+  username        String   @unique
+  password        String
+  name            String
+  nombreCompleto  String?
+  email           String?
+  phone           String?
+  dni             String?
+  foto            String?
+  role            String   @default("empleado")
+  tipo            String?  // "Administrador", "Encargado", "Empleado", "Servicio Tecnico", "Mecanico"
+  vehiculoMarca   String?
+  vehiculoModelo  String?
+  vehiculoMatricula String?
+  activo          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  preventivos       Preventivo[]
+  tareasAsignadas   Tarea[]
+  vehiculosAsignados VehiculoAsignacion[]
+
+  @@index([role])
+  @@index([activo])
+}
+
+// ============================================================
+// VEHÍCULOS
+// ============================================================
+
+model Vehiculo {
+  id              String   @id @default(cuid())
+  marca           String
+  modelo          String
+  matricula       String   @unique
+  anio            Int?
+  color           String?
+  kilometraje     Int?
+  observaciones   String?
+  activo          Boolean  @default(true)
+  empresaId       String
+  empresa         Empresa  @relation(fields: [empresaId], references: [id])
+  asignaciones    VehiculoAsignacion[]
+  mantenimientos  MantenimientoVehiculo[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([empresaId])
+  @@index([matricula])
+}
+
+model VehiculoAsignacion {
+  id          String    @id @default(cuid())
+  vehiculoId  String
+  empleadoId  String
+  fechaInicio DateTime
+  fechaFin    DateTime?
+  activa      Boolean   @default(true)
+  vehiculo    Vehiculo  @relation(fields: [vehiculoId], references: [id], onDelete: Cascade)
+  empleado    Employee  @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([vehiculoId])
+  @@index([empleadoId])
+  @@index([activa])
+}
+
+model MantenimientoVehiculo {
+  id              String    @id @default(cuid())
+  vehiculoId      String
+  tipo            String    // "preventivo", "correctivo", "reparacion", "itv", "seguro"
+  descripcion     String
+  fecha           DateTime
+  kilometraje     Int?
+  costo           Float?
+  taller          String?
+  observaciones   String?
+  estado          String    @default("pendiente") // "pendiente", "en_progreso", "completado"
+  vehiculo        Vehiculo  @relation(fields: [vehiculoId], references: [id], onDelete: Cascade)
+  fotos           FotoMantenimiento[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([vehiculoId])
+  @@index([estado])
+  @@index([tipo])
+}
+
+model FotoMantenimiento {
+  id                  String                @id @default(cuid())
+  mantenimientoId     String
+  fotoBase64          String
+  descripcion         String?
+  mantenimiento       MantenimientoVehiculo @relation(fields: [mantenimientoId], references: [id], onDelete: Cascade)
+  createdAt           DateTime              @default(now())
+}
+
+// ============================================================
+// PREVENTIVOS
+// ============================================================
+
+model Preventivo {
+  id                    String      @id @default(cuid())
+  procedimiento         String
+  fecha                 DateTime
+  tipoSuministro        String?
+  contadorVistaGeneral  String?
+  contadorCaja          String?
+  contadorFusibles      String?
+  parcelaEdificio       String?
+  observaciones         String?
+  latitud               Float?
+  longitud              Float?
+  estado                String      @default("pendiente") // "pendiente", "en_progreso", "completado", "enviado"
+  tecnicoId             String
+  centroId              String
+  formData              String?     // JSON string con todos los campos del formulario (fields: Record<string, string>)
+  tecnico               Employee    @relation(fields: [tecnicoId], references: [id])
+  centro                Centro      @relation(fields: [centroId], references: [id])
+  fotos                 FotoPreventivo[]
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([tecnicoId])
+  @@index([centroId])
+  @@index([estado])
+  @@index([fecha])
+  @@index([procedimiento])
+}
+
+model FotoPreventivo {
+  id            String      @id @default(cuid())
+  preventivoId  String
+  fotoBase64    String
+  descripcion   String?
+  categoria     String?     // "vista_general", "caja", "fusibles", "adicional"
+  preventivo    Preventivo  @relation(fields: [preventivoId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@index([preventivoId])
+  @@index([categoria])
+}
+
+// ============================================================
+// TAREAS
+// ============================================================
+
+model Tarea {
+  id              String    @id @default(cuid())
+  titulo          String
+  descripcion     String?
+  tipo            String    @default("correctivo") // "correctivo", "preventivo", "instalacion", "reparacion", "blacklist"
+  prioridad       String    @default("media")      // "baja", "media", "alta", "urgente"
+  estado          String    @default("pendiente")  // "pendiente", "en_progreso", "completada", "cancelada", "blacklist"
+  fechaLimite     DateTime?
+  fechaInicio     DateTime?
+  fechaFin        DateTime?
+  centroId        String
+  asignadoA       String
+  formData        String?   // JSON string con todos los campos del formulario (fields: Record<string, string>)
+  centro          Centro    @relation(fields: [centroId], references: [id])
+  empleado        Employee  @relation(fields: [asignadoA], references: [id])
+  fotos           FotoTarea[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([centroId])
+  @@index([asignadoA])
+  @@index([estado])
+  @@index([tipo])
+  @@index([prioridad])
+}
+
+model FotoTarea {
+  id          String  @id @default(cuid())
+  tareaId     String
+  fotoBase64  String
+  descripcion String?
+  categoria   String? // "antes", "durante", "despues", "otro"
+  tarea       Tarea   @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([tareaId])
+}
