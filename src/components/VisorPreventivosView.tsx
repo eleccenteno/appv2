@@ -964,41 +964,37 @@ function PreventivoDetailDialog({
   return (
     <Dialog open onOpenChange={() => { if (!isEditing) onClose(); }}>
       <DialogContent className="max-w-2xl max-h-[92vh] overflow-hidden p-0 gap-0">
-        {/* Hero header inside dialog */}
-        <div className={`relative overflow-hidden bg-gradient-to-br ${estadoConfig.gradient}`}>
-          <div className="absolute inset-0 bg-black/10" />
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-          <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full blur-xl" />
-
-          <div className="relative p-5 pb-4">
+        {/* Compact header */}
+        <div className={`${estadoConfig.bg} border-b ${estadoConfig.border}`}>
+          <div className="px-4 pt-3 pb-2.5">
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2.5 text-lg">
-                <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  {isEditing ? <Pencil className="h-4.5 w-4.5 text-white" /> : <Eye className="h-4.5 w-4.5 text-white" />}
+              <DialogTitle className="flex items-center gap-2 text-sm">
+                <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${estadoConfig.gradient} flex items-center justify-center`}>
+                  {isEditing ? <Pencil className="h-3.5 w-3.5 text-white" /> : <Eye className="h-3.5 w-3.5 text-white" />}
                 </div>
-                {isEditing ? 'Editando Preventivo' : 'Detalle del Preventivo'}
+                <span className="text-foreground font-semibold">{isEditing ? 'Editando Preventivo' : 'Detalle del Preventivo'}</span>
               </DialogTitle>
             </DialogHeader>
 
-            <div className="mt-4 flex items-start gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
-                <EstadoIcon className="h-7 w-7 text-white" />
+            <div className="mt-2 flex items-center gap-2.5">
+              <div className={`w-8 h-8 rounded-lg ${estadoConfig.bg} flex items-center justify-center shrink-0 border ${estadoConfig.border}`}>
+                <EstadoIcon className={`h-4 w-4 ${estadoConfig.text}`} />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="font-bold text-lg text-white leading-tight">
+                <h2 className="font-bold text-sm text-foreground leading-tight truncate">
                   {preventivo.centro?.nombre || preventivo.centro?.codigo}
                 </h2>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm text-[10px] rounded-lg">
+                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                  <Badge className={`${estadoConfig.bg} ${estadoConfig.text} border ${estadoConfig.border} text-[9px] font-semibold rounded-md px-1.5 h-4`}>
                     {estadoConfig.label}
                   </Badge>
                   {preventivo.procedimiento && (
-                    <Badge className="bg-white/15 text-white/90 border-white/20 backdrop-blur-sm text-[10px] rounded-lg">
+                    <Badge variant="secondary" className="text-[9px] rounded-md px-1.5 h-4">
                       {preventivo.procedimiento}
                     </Badge>
                   )}
                   {preventivo.centro?.subEmpresa && (
-                    <Badge className="bg-white/15 text-white/90 border-white/20 backdrop-blur-sm text-[10px] rounded-lg">
+                    <Badge variant="outline" className="text-[9px] rounded-md px-1.5 h-4">
                       {preventivo.centro.subEmpresa.nombre}
                     </Badge>
                   )}
@@ -1007,46 +1003,47 @@ function PreventivoDetailDialog({
 
               {/* Admin action buttons in header */}
               {isAdmin && !isEditing && (
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
                   <Button
                     size="sm"
+                    variant="outline"
                     onClick={enterEditMode}
-                    className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm h-8 gap-1.5 text-xs"
+                    className="h-7 gap-1 text-[11px] px-2"
                   >
-                    <Pencil className="h-3.5 w-3.5" />
+                    <Pencil className="h-3 w-3" />
                     Editar
                   </Button>
                   <Button
                     size="sm"
                     variant="destructive"
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="bg-red-500/80 hover:bg-red-600 text-white h-8 gap-1.5 text-xs"
+                    className="h-7 gap-1 text-[11px] px-2"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Eliminar
+                    <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
               )}
             </div>
 
-            {/* Mini stats */}
-            <div className="mt-4 grid grid-cols-4 gap-2">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2.5 text-center">
-                <p className="text-white text-lg font-bold">{totalPct}%</p>
-                <p className="text-white/70 text-[9px]">Completado</p>
+            {/* Compact stats row */}
+            <div className="mt-2 flex items-center gap-3 text-[11px]">
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <span className="text-muted-foreground">Completado</span>
+                <span className="font-bold text-foreground">{totalPct}%</span>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2.5 text-center">
-                <p className="text-white text-lg font-bold">{totalFilled}</p>
-                <p className="text-white/70 text-[9px]">Campos llenos</p>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="text-muted-foreground">{totalFilled}/{totalFields}</span>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2.5 text-center">
-                <p className="text-white text-lg font-bold">{preventivo.fotos?.length || 0}</p>
-                <p className="text-white/70 text-[9px]">Fotos</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2.5 text-center">
-                <p className="text-white text-lg font-bold">{totalFields - totalFilled}</p>
-                <p className="text-white/70 text-[9px]">Vacíos</p>
-              </div>
+              {preventivo.fotos && preventivo.fotos.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <Camera className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-muted-foreground">{preventivo.fotos.length}</span>
+                </div>
+              )}
+              <div className="flex-1" />
+              <span className="text-muted-foreground">{fecha}</span>
             </div>
           </div>
         </div>
@@ -1100,7 +1097,7 @@ function PreventivoDetailDialog({
         )}
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto custom-scrollbar p-6 space-y-7" style={{ maxHeight: `calc(92vh - ${isEditing ? '340px' : '280px'})` }}>
+        <div className="overflow-y-auto custom-scrollbar p-5 space-y-5" style={{ maxHeight: `calc(92vh - ${isEditing ? '190px' : '140px'})` }}>
           {/* Metadata grid */}
           <div className="grid grid-cols-2 gap-3">
             <MetaItem icon={Building2} label="Código centro" value={preventivo.centro?.codigo} />
@@ -1281,11 +1278,11 @@ function PreventivoDetailDialog({
 
 function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-        <Icon className="h-4 w-4 text-primary" />
+    <div className="flex items-center gap-2">
+      <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+        <Icon className="h-3.5 w-3.5 text-primary" />
       </div>
-      <h3 className="text-sm font-bold text-foreground">{label}</h3>
+      <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">{label}</h3>
     </div>
   );
 }
@@ -1297,12 +1294,12 @@ function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: s
 function MetaItem({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value?: string | null }) {
   if (!value) return null;
   return (
-    <div className="bg-muted/30 rounded-xl p-3.5 border border-border/20">
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <Icon className="h-3.5 w-3.5 text-primary/70" />
-        <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">{label}</p>
+    <div className="bg-muted/30 rounded-lg p-2.5 border border-border/20">
+      <div className="flex items-center gap-1.5 mb-1">
+        <Icon className="h-3 w-3 text-primary/70" />
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{label}</p>
       </div>
-      <p className="text-sm text-foreground font-semibold truncate">{value}</p>
+      <p className="text-xs text-foreground font-semibold truncate">{value}</p>
     </div>
   );
 }
