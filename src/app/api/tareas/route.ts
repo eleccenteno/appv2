@@ -22,7 +22,23 @@ export async function GET(request: NextRequest) {
     const provincia = searchParams.get('provincia');
 
     const where: Record<string, unknown> = {};
-    if (estado) where.estado = estado;
+    if (estado) {
+      // Normalize estado: accept both display names and DB values
+      const estadoMap: Record<string, string> = {
+        'Pendiente': 'pendiente',
+        'pendiente': 'pendiente',
+        'Realizado': 'completada',
+        'realizado': 'completada',
+        'completada': 'completada',
+        'en_progreso': 'en_progreso',
+        'En progreso': 'en_progreso',
+        'cancelada': 'cancelada',
+        'Cancelada': 'cancelada',
+        'blacklist': 'blacklist',
+        'Black List': 'blacklist',
+      };
+      where.estado = estadoMap[estado] || estado.toLowerCase();
+    }
     if (tipo) where.tipo = tipo;
     if (prioridad) where.prioridad = prioridad;
     if (centroId) where.centroId = centroId;

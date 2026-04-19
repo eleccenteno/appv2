@@ -219,12 +219,22 @@ export default function VisorPreventivosView() {
   const fetchPreventivos = useCallback(async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (filterEstado && filterEstado !== 'todos') params.set('estado', filterEstado);
-      const res = await apiFetch(`/api/preventivos?${params.toString()}`);
-      if (!res.ok) throw new Error('Error al cargar preventivos');
-      const data = await res.json();
-      setPreventivos(data.preventivos || []);
+      const allPreventivos: PreventivoItem[] = [];
+      let page = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const params = new URLSearchParams();
+        if (filterEstado && filterEstado !== 'todos') params.set('estado', filterEstado);
+        params.set('page', String(page));
+        params.set('limit', '200');
+        const res = await apiFetch(`/api/preventivos?${params.toString()}`);
+        if (!res.ok) throw new Error('Error al cargar preventivos');
+        const data = await res.json();
+        allPreventivos.push(...(data.preventivos || []));
+        hasMore = data.pagination?.hasMore || false;
+        page++;
+      }
+      setPreventivos(allPreventivos);
     } catch (err) {
       console.error(err);
       setError('No se pudieron cargar los preventivos');

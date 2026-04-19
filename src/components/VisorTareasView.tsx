@@ -241,12 +241,22 @@ export default function VisorTareasView() {
   const fetchTareas = useCallback(async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (filterEstado && filterEstado !== 'todos') params.set('estado', filterEstado);
-      const res = await fetch(`/api/tareas?${params.toString()}`);
-      if (!res.ok) throw new Error('Error al cargar tareas');
-      const data = await res.json();
-      setTareas(data.tareas || []);
+      const allTareas: TareaItem[] = [];
+      let page = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const params = new URLSearchParams();
+        if (filterEstado && filterEstado !== 'todos') params.set('estado', filterEstado);
+        params.set('page', String(page));
+        params.set('limit', '200');
+        const res = await apiFetch(`/api/tareas?${params.toString()}`);
+        if (!res.ok) throw new Error('Error al cargar tareas');
+        const data = await res.json();
+        allTareas.push(...(data.tareas || []));
+        hasMore = data.pagination?.hasMore || false;
+        page++;
+      }
+      setTareas(allTareas);
     } catch (err) {
       console.error(err);
       setError('No se pudieron cargar las tareas');
