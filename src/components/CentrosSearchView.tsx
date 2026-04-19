@@ -103,9 +103,7 @@ import {
   Plus,
   Trash2,
   FileDown,
-  Sheet,
   FileType,
-  FileArchive,
   Table2,
 } from 'lucide-react';
 import {
