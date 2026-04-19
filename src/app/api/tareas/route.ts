@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { sanitizeFormData } from '@/lib/sanitize';
 import { authenticateRequest } from '@/lib/auth';
+import { logActivity } from '@/lib/logger';
 
 // GET /api/tareas - Listar tareas con filtros avanzados y datos cruzados
 export async function GET(request: NextRequest) {
@@ -170,9 +171,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    await logActivity('create', 'tarea', authUser, request, {
+      entity: 'tarea',
+      entityId: tarea.id,
+      entityName: tarea.titulo,
+      description: `Tarea creada: ${tarea.titulo}`,
+    });
+
     return NextResponse.json({ tarea: result, message: 'Tarea creada exitosamente' }, { status: 201 });
   } catch (error) {
     console.error('Error creating tarea:', error);
+    await logActivity('create', 'tarea', authUser, request, {
+      entity: 'tarea',
+      description: 'Error al crear la tarea',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al crear la tarea' }, { status: 500 });
   }
 }
@@ -236,9 +251,24 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    await logActivity('update', 'tarea', authUser, request, {
+      entity: 'tarea',
+      entityId: tarea.id,
+      entityName: tarea.titulo,
+      description: `Tarea actualizada: ${tarea.titulo}`,
+    });
+
     return NextResponse.json({ tarea: result, message: 'Tarea actualizada exitosamente' });
   } catch (error) {
     console.error('Error updating tarea:', error);
+    await logActivity('update', 'tarea', authUser, request, {
+      entity: 'tarea',
+      entityId: id,
+      description: 'Error al actualizar la tarea',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al actualizar la tarea' }, { status: 500 });
   }
 }
@@ -264,9 +294,23 @@ export async function DELETE(request: NextRequest) {
     // Delete the tarea
     await db.tarea.delete({ where: { id } });
 
+    await logActivity('delete', 'tarea', authUser, request, {
+      entity: 'tarea',
+      entityId: id,
+      description: 'Tarea eliminada',
+    });
+
     return NextResponse.json({ message: 'Tarea eliminada exitosamente' });
   } catch (error) {
     console.error('Error deleting tarea:', error);
+    await logActivity('delete', 'tarea', authUser, request, {
+      entity: 'tarea',
+      entityId: id,
+      description: 'Error al eliminar la tarea',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al eliminar la tarea' }, { status: 500 });
   }
 }

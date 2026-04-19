@@ -265,3 +265,46 @@ model FotoTarea {
 
   @@index([tareaId])
 }
+
+// ============================================================
+// SISTEMA DE LOG / AUDITORÍA
+// ============================================================
+
+model LogEntry {
+  id              String   @id @default(cuid())
+  // Quién
+  userId          String?
+  username        String?
+  userRole        String?
+  // Qué
+  action          String   // "create", "update", "delete", "login", "logout", "import", "export", "backup", "restore", "error", "view"
+  category        String   // "auth", "preventivo", "tarea", "centro", "empleado", "vehiculo", "empresa", "backup", "system", "usuario"
+  entity          String?  // Tipo de entidad: "preventivo", "tarea", "centro", etc.
+  entityId        String?  // ID de la entidad afectada
+  entityName      String?  // Nombre legible de la entidad (ej: nombre centro, matrícula vehículo)
+  // Cuándo
+  timestamp       DateTime @default(now())
+  // Resultado
+  status          String   @default("success") // "success", "error", "warning"
+  statusCode      Int?     // HTTP status code
+  // Detalles
+  description     String?  // Descripción legible de la acción
+  details         String?  // JSON string con datos adicionales (campos modificados, parámetros, etc.)
+  errorMessage    String?  // Mensaje de error si falló
+  // Rendimiento
+  durationMs      Int?     // Duración en milisegundos
+  // Contexto
+  ipAddress       String?
+  userAgent       String?
+  // Metadatos
+  severity        String   @default("info") // "debug", "info", "warn", "error", "critical"
+
+  @@index([userId])
+  @@index([action])
+  @@index([category])
+  @@index([status])
+  @@index([severity])
+  @@index([timestamp])
+  @@index([entity])
+  @@index([entityId])
+}

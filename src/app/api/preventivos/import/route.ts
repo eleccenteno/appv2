@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { authenticateRequest, hashPassword } from '@/lib/auth';
+import { logActivity } from '@/lib/logger';
 
 // POST /api/preventivos/import - Importar preventivos masivamente desde Excel
 export async function POST(request: NextRequest) {
@@ -8,6 +9,8 @@ export async function POST(request: NextRequest) {
   if (!authUser) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
+
+  const startTime = performance.now();
 
   try {
     const body = await request.json();
@@ -449,12 +452,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const durationMs = Math.round(performance.now() - startTime);
+
+    await logActivity('import', 'preventivo', authUser, request, {
+      entity: 'preventivo',
+      description: `Importación de preventivos completada`,
+      details: { imported: results.created, errors: results.skipped, centrosCreated: results.centrosCreated, duplicatesSkipped: results.duplicatesSkipped, total: preventivos.length },
+      durationMs,
+      status: results.skipped > 0 ? 'warning' : 'success',
+    });
+
     return NextResponse.json({
       message: `Importación completada: ${results.created} preventivos creados, ${results.duplicatesSkipped} duplicados omitidos, ${results.skipped} errores`,
       results,
     });
   } catch (error) {
     console.error('Error importing preventivos:', error);
+    const durationMs = Math.round(performance.now() - startTime);
+    await logActivity('import', 'preventivo', authUser, request, {
+      entity: 'preventivo',
+      description: 'Error al importar preventivos',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      durationMs,
+      severity: 'error',
+    });
     return NextResponse.json({ error: 'Error al importar preventivos' }, { status: 500 });
   }
 }

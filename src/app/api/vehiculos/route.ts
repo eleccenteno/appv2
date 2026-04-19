@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
+import { logActivity } from '@/lib/logger';
 
 // GET /api/vehiculos - Listar vehículos con filtros y datos cruzados
 export async function GET(request: NextRequest) {
@@ -68,12 +69,32 @@ export async function POST(request: NextRequest) {
       include: { empresa: { select: { id: true, nombre: true } } },
     });
 
+    await logActivity('create', 'vehiculo', authUser, request, {
+      entity: 'vehiculo',
+      entityId: vehiculo.id,
+      entityName: vehiculo.matricula,
+      description: `Vehículo creado: ${vehiculo.marca} ${vehiculo.modelo} (${vehiculo.matricula})`,
+    });
+
     return NextResponse.json({ vehiculo, message: 'Vehículo creado exitosamente' }, { status: 201 });
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002') {
+      await logActivity('create', 'vehiculo', authUser, request, {
+        entity: 'vehiculo',
+        description: `Intento de crear vehículo duplicado: ${matricula}`,
+        status: 'warning',
+        statusCode: 409,
+      });
       return NextResponse.json({ error: 'Ya existe un vehículo con esa matrícula' }, { status: 409 });
     }
     console.error('Error creating vehiculo:', error);
+    await logActivity('create', 'vehiculo', authUser, request, {
+      entity: 'vehiculo',
+      description: 'Error al crear el vehículo',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al crear el vehículo' }, { status: 500 });
   }
 }
@@ -111,9 +132,24 @@ export async function PUT(request: NextRequest) {
       include: { empresa: { select: { id: true, nombre: true } } },
     });
 
+    await logActivity('update', 'vehiculo', authUser, request, {
+      entity: 'vehiculo',
+      entityId: vehiculo.id,
+      entityName: vehiculo.matricula,
+      description: `Vehículo actualizado: ${vehiculo.marca} ${vehiculo.modelo} (${vehiculo.matricula})`,
+    });
+
     return NextResponse.json({ vehiculo, message: 'Vehículo actualizado exitosamente' });
   } catch (error) {
     console.error('Error updating vehiculo:', error);
+    await logActivity('update', 'vehiculo', authUser, request, {
+      entity: 'vehiculo',
+      entityId: id,
+      description: 'Error al actualizar el vehículo',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al actualizar el vehículo' }, { status: 500 });
   }
 }

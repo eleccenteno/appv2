@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
+import { logActivity } from '@/lib/logger';
 
 // GET /api/centros - Listar centros con filtros avanzados y consultas cruzadas
 export async function GET(request: NextRequest) {
@@ -151,12 +152,32 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    await logActivity('create', 'centro', authUser, request, {
+      entity: 'centro',
+      entityId: centro.id,
+      entityName: centro.codigo,
+      description: `Centro creado: ${centro.codigo} - ${centro.nombre}`,
+    });
+
     return NextResponse.json({ centro, message: 'Centro creado exitosamente' }, { status: 201 });
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002') {
+      await logActivity('create', 'centro', authUser, request, {
+        entity: 'centro',
+        description: `Intento de crear centro duplicado: ${codigo}`,
+        status: 'warning',
+        statusCode: 409,
+      });
       return NextResponse.json({ error: 'Ya existe un centro con ese código' }, { status: 409 });
     }
     console.error('Error creating centro:', error);
+    await logActivity('create', 'centro', authUser, request, {
+      entity: 'centro',
+      description: 'Error al crear el centro',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al crear el centro' }, { status: 500 });
   }
 }
@@ -198,9 +219,24 @@ export async function PUT(request: NextRequest) {
       },
     });
 
+    await logActivity('update', 'centro', authUser, request, {
+      entity: 'centro',
+      entityId: centro.id,
+      entityName: centro.codigo,
+      description: `Centro actualizado: ${centro.codigo} - ${centro.nombre}`,
+    });
+
     return NextResponse.json({ centro, message: 'Centro actualizado exitosamente' });
   } catch (error) {
     console.error('Error updating centro:', error);
+    await logActivity('update', 'centro', authUser, request, {
+      entity: 'centro',
+      entityId: id,
+      description: 'Error al actualizar el centro',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al actualizar el centro' }, { status: 500 });
   }
 }

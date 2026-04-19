@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppStore, ViewType } from '@/lib/store';
-import { Users, Car, BarChart3, Edit, Shield, ChevronRight, Sparkles, Zap, Eye, Database, HardDrive } from 'lucide-react';
+import { Users, Car, BarChart3, Edit, Shield, ChevronRight, Sparkles, Zap, Eye, Database, HardDrive, ScrollText } from 'lucide-react';
 
 const menuCards: { icon: React.ElementType; label: string; view: ViewType; gradient: string; shadowColor: string; description: string; badge?: string; badgeGradient?: string }[] = [
   {
@@ -75,6 +75,16 @@ const menuCards: { icon: React.ElementType; label: string; view: ViewType; gradi
     description: 'Crear y restaurar copias de seguridad',
     badge: 'Nuevo',
     badgeGradient: 'from-emerald-500 to-teal-600',
+  },
+  {
+    icon: ScrollText,
+    label: 'Registro de Actividad',
+    view: 'logs',
+    gradient: 'from-orange-500 to-red-600',
+    shadowColor: 'shadow-orange-500/20',
+    description: 'Auditoría, errores y actividad de usuarios',
+    badge: 'Nuevo',
+    badgeGradient: 'from-orange-500 to-red-600',
   },
 ];
 

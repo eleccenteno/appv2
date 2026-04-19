@@ -5,6 +5,7 @@ import path from 'path';
 import { db } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
 import { sanitizeFormData } from '@/lib/sanitize';
+import { logActivity } from '@/lib/logger';
 
 // Base directory for storing preventivo photos
 const PHOTOS_BASE_DIR = path.join(process.cwd(), 'fotografias preventivos atw');
@@ -325,12 +326,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    await logActivity('create', 'preventivo', authUser, request, {
+      entity: 'preventivo',
+      entityId: preventivo.id,
+      entityName: preventivo.procedimiento,
+      description: `Preventivo creado: ${preventivo.procedimiento}`,
+    });
+
     return NextResponse.json({
       preventivo: result,
       message: 'Preventivo guardado exitosamente',
     });
   } catch (error) {
     console.error('Error saving preventivo:', error);
+    await logActivity('create', 'preventivo', authUser, request, {
+      entity: 'preventivo',
+      description: 'Error al guardar el preventivo',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al guardar el preventivo' }, { status: 500 });
   }
 }
@@ -406,9 +421,24 @@ export async function PUT(request: NextRequest) {
       });
     }
 
+    await logActivity('update', 'preventivo', authUser, request, {
+      entity: 'preventivo',
+      entityId: preventivo.id,
+      entityName: preventivo.procedimiento,
+      description: `Preventivo actualizado: ${preventivo.procedimiento}`,
+    });
+
     return NextResponse.json({ preventivo: result, message: 'Preventivo actualizado exitosamente' });
   } catch (error) {
     console.error('Error updating preventivo:', error);
+    await logActivity('update', 'preventivo', authUser, request, {
+      entity: 'preventivo',
+      entityId: id,
+      description: 'Error al actualizar el preventivo',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al actualizar el preventivo' }, { status: 500 });
   }
 }
@@ -434,9 +464,23 @@ export async function DELETE(request: NextRequest) {
     // Delete the preventivo
     await db.preventivo.delete({ where: { id } });
 
+    await logActivity('delete', 'preventivo', authUser, request, {
+      entity: 'preventivo',
+      entityId: id,
+      description: 'Preventivo eliminado',
+    });
+
     return NextResponse.json({ message: 'Preventivo eliminado exitosamente' });
   } catch (error) {
     console.error('Error deleting preventivo:', error);
+    await logActivity('delete', 'preventivo', authUser, request, {
+      entity: 'preventivo',
+      entityId: id,
+      description: 'Error al eliminar el preventivo',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al eliminar el preventivo' }, { status: 500 });
   }
 }

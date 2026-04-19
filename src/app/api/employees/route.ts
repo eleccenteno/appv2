@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { authenticateRequest, hashPassword } from '@/lib/auth';
+import { logActivity } from '@/lib/logger';
 
 // GET /api/employees - Listar empleados con datos cruzados
 export async function GET(request: NextRequest) {
@@ -117,12 +118,32 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    await logActivity('create', 'empleado', authUser, request, {
+      entity: 'employee',
+      entityId: employee.id,
+      entityName: employee.name,
+      description: `Empleado creado: ${employee.name} (${employee.username})`,
+    });
+
     return NextResponse.json({ employee, message: 'Empleado creado exitosamente' }, { status: 201 });
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002') {
+      await logActivity('create', 'empleado', authUser, request, {
+        entity: 'employee',
+        description: `Intento de crear empleado duplicado: ${username}`,
+        status: 'warning',
+        statusCode: 409,
+      });
       return NextResponse.json({ error: 'Ya existe un empleado con ese username' }, { status: 409 });
     }
     console.error('Error creating employee:', error);
+    await logActivity('create', 'empleado', authUser, request, {
+      entity: 'employee',
+      description: 'Error al crear el empleado',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al crear el empleado' }, { status: 500 });
   }
 }
@@ -171,9 +192,24 @@ export async function PUT(request: NextRequest) {
       },
     });
 
+    await logActivity('update', 'empleado', authUser, request, {
+      entity: 'employee',
+      entityId: employee.id,
+      entityName: employee.name,
+      description: `Empleado actualizado: ${employee.name} (${employee.username})`,
+    });
+
     return NextResponse.json({ employee, message: 'Empleado actualizado exitosamente' });
   } catch (error) {
     console.error('Error updating employee:', error);
+    await logActivity('update', 'empleado', authUser, request, {
+      entity: 'employee',
+      entityId: id,
+      description: 'Error al actualizar el empleado',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al actualizar el empleado' }, { status: 500 });
   }
 }
@@ -212,9 +248,23 @@ export async function DELETE(request: NextRequest) {
       select: { id: true, username: true, name: true, activo: true },
     });
 
+    await logActivity('delete', 'empleado', authUser, request, {
+      entity: 'employee',
+      entityId: deactivated.id,
+      entityName: deactivated.name,
+      description: `Empleado desactivado (soft delete): ${deactivated.name} (${deactivated.username})`,
+    });
+
     return NextResponse.json({ employee: deactivated, message: 'Empleado desactivado exitosamente' });
   } catch (error) {
     console.error('Error deleting employee:', error);
+    await logActivity('delete', 'empleado', authUser, request, {
+      entity: 'employee',
+      description: 'Error al desactivar el empleado',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al desactivar el empleado' }, { status: 500 });
   }
 }

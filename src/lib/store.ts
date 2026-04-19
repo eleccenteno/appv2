@@ -28,7 +28,8 @@ export type ViewType =
   | 'form-editor'
   | 'centros-editor'
   | 'temas'
-  | 'backup';
+  | 'backup'
+  | 'logs';
 
 export interface Employee {
   id: string;

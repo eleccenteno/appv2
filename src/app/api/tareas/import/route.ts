@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { authenticateRequest, hashPassword } from '@/lib/auth';
+import { logActivity } from '@/lib/logger';
 
 // POST /api/tareas/import - Importar tareas masivamente desde Excel
 export async function POST(request: NextRequest) {
@@ -8,6 +9,8 @@ export async function POST(request: NextRequest) {
   if (!authUser) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
+
+  const startTime = performance.now();
 
   try {
     const body = await request.json();
@@ -319,12 +322,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const durationMs = Math.round(performance.now() - startTime);
+
+    await logActivity('import', 'tarea', authUser, request, {
+      entity: 'tarea',
+      description: `Importación de tareas completada`,
+      details: { imported: results.created, errors: results.skipped, centrosCreated: results.centrosCreated, empleadosCreated: results.empleadosCreated, total: tareas.length },
+      durationMs,
+      status: results.skipped > 0 ? 'warning' : 'success',
+    });
+
     return NextResponse.json({
       message: `Importación completada: ${results.created} tareas creadas, ${results.skipped} omitidas`,
       results,
     });
   } catch (error) {
     console.error('Error importing tareas:', error);
+    const durationMs = Math.round(performance.now() - startTime);
+    await logActivity('import', 'tarea', authUser, request, {
+      entity: 'tarea',
+      description: 'Error al importar tareas',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      durationMs,
+      severity: 'error',
+    });
     return NextResponse.json({ error: 'Error al importar tareas' }, { status: 500 });
   }
 }

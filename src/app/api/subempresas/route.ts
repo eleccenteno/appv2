@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
+import { logActivity } from '@/lib/logger';
 
 // GET /api/subempresas - Listar sub-empresas, filtrar por empresaId
 export async function GET(request: NextRequest) {
@@ -56,12 +57,32 @@ export async function POST(request: NextRequest) {
       include: { empresa: { select: { id: true, nombre: true } } },
     });
 
+    await logActivity('create', 'subempresa', authUser, request, {
+      entity: 'subEmpresa',
+      entityId: subEmpresa.id,
+      entityName: subEmpresa.nombre,
+      description: `Sub-empresa creada: ${subEmpresa.nombre} (${subEmpresa.slug})`,
+    });
+
     return NextResponse.json({ subEmpresa, message: 'Sub-empresa creada exitosamente' }, { status: 201 });
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002') {
+      await logActivity('create', 'subempresa', authUser, request, {
+        entity: 'subEmpresa',
+        description: `Intento de crear sub-empresa duplicada: ${slug}`,
+        status: 'warning',
+        statusCode: 409,
+      });
       return NextResponse.json({ error: 'Ya existe una sub-empresa con ese slug' }, { status: 409 });
     }
     console.error('Error creating subempresa:', error);
+    await logActivity('create', 'subempresa', authUser, request, {
+      entity: 'subEmpresa',
+      description: 'Error al crear la sub-empresa',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al crear la sub-empresa' }, { status: 500 });
   }
 }

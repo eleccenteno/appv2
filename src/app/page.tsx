@@ -30,6 +30,7 @@ const TareasView = dynamic(() => import('@/components/TareasView'));
 const VisorTareasView = dynamic(() => import('@/components/VisorTareasView'));
 const TemasView = dynamic(() => import('@/components/TemasView'));
 const BackupView = dynamic(() => import('@/components/BackupView'));
+const LogView = dynamic(() => import('@/components/LogView'));
 
 export default function Home() {
   const { isLoggedIn, currentUser, currentView } = useAppStore();
@@ -118,6 +119,10 @@ export default function Home() {
       // Backup
       case 'backup':
         return <BackupView />;
+
+      // Logs
+      case 'logs':
+        return <LogView />;
 
       default:
         return <InicioView />;

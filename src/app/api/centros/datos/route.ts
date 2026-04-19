@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
+import { logActivity } from '@/lib/logger';
 
 interface DatosJsonUpdate {
   codigo: string;
@@ -61,12 +62,27 @@ export async function PUT(request: NextRequest) {
       data: { datosJson: JSON.stringify(existingDatos) },
     });
 
+    await logActivity('update', 'centro', authUser, request, {
+      entity: 'centro',
+      entityId: updatedCentro.id,
+      entityName: codigo,
+      description: `Datos de centro actualizados: ${codigo} (${edits.length} campos editados)`,
+      details: { codigo, editCount: edits.length },
+    });
+
     return NextResponse.json({
       message: 'Datos guardados correctamente',
       datosJson: existingDatos,
     });
   } catch (error) {
     console.error('Error saving centros datos:', error);
+    await logActivity('update', 'centro', authUser, request, {
+      entity: 'centro',
+      description: 'Error al guardar los datos del centro',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al guardar los datos' }, { status: 500 });
   }
 }

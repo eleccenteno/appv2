@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
+import { logActivity } from '@/lib/logger';
 import { writeFile, readFile, unlink, readdir, mkdir, stat } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
@@ -397,9 +398,23 @@ export async function DELETE(request: NextRequest) {
     }
 
     await unlink(filePath);
+
+    await logActivity('delete', 'backup', authUser, request, {
+      entity: 'backup',
+      entityName: filename,
+      description: `Backup eliminado: ${filename}`,
+    });
+
     return NextResponse.json({ message: 'Copia de seguridad eliminada correctamente' });
   } catch (error) {
     console.error('Error deleting backup:', error);
+    await logActivity('delete', 'backup', authUser, request, {
+      entity: 'backup',
+      description: 'Error al eliminar la copia de seguridad',
+      status: 'error',
+      statusCode: 500,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Error al eliminar la copia de seguridad' }, { status: 500 });
   }
 }
@@ -409,6 +424,8 @@ export async function DELETE(request: NextRequest) {
 // ============================================================
 
 async function handleExport(request: NextRequest) {
+  const startTime = performance.now();
+
   const body = await request.json();
   const selectedSections: SectionKey[] = body.sections || [];
   const description: string = body.description || '';
@@ -463,6 +480,15 @@ async function handleExport(request: NextRequest) {
 
   // If download mode, return the backup JSON as a downloadable response
   if (download) {
+    const durationMs = Math.round(performance.now() - startTime);
+    await logActivity('export', 'backup', null, request, {
+      entity: 'backup',
+      entityName: filename,
+      description: `Backup exportado (descarga): ${filename}`,
+      details: { sections: selectedSections, counts, fileSize: fileStat.size },
+      durationMs,
+    });
+
     return new NextResponse(jsonContent, {
       headers: {
         'Content-Type': 'application/json',
@@ -470,6 +496,16 @@ async function handleExport(request: NextRequest) {
       },
     });
   }
+
+  const durationMs = Math.round(performance.now() - startTime);
+
+  await logActivity('export', 'backup', null, request, {
+    entity: 'backup',
+    entityName: filename,
+    description: `Backup creado: ${filename}`,
+    details: { sections: selectedSections, counts, fileSize: fileStat.size },
+    durationMs,
+  });
 
   return NextResponse.json({
     message: 'Copia de seguridad creada exitosamente',
@@ -489,6 +525,8 @@ async function handleExport(request: NextRequest) {
 // ============================================================
 
 async function handleImport(request: NextRequest) {
+  const startTime = performance.now();
+
   const body = await request.json();
   const backupData: BackupData = body.backupData;
   const selectedSections: SectionKey[] = body.sections || [];
@@ -562,6 +600,16 @@ async function handleImport(request: NextRequest) {
     // Non-critical: don't fail if we can't save the file
   }
 
+  const durationMs = Math.round(performance.now() - startTime);
+
+  await logActivity('restore', 'backup', null, request, {
+    entity: 'backup',
+    entityName: saveFilename,
+    description: `Backup restaurado: ${selectedSections.join(', ')}`,
+    details: { sections: selectedSections, importCounts, importOrder },
+    durationMs,
+  });
+
   return NextResponse.json({
     message: 'Copia de seguridad restaurada exitosamente',
     importCounts,
@@ -594,6 +642,12 @@ async function handleDownload(request: NextRequest) {
 
   // Read the backup file and return it as a downloadable response
   const content = await readFile(filePath, 'utf-8');
+
+  await logActivity('download', 'backup', null, request, {
+    entity: 'backup',
+    entityName: filename,
+    description: `Backup descargado: ${filename}`,
+  });
 
   return new NextResponse(content, {
     headers: {
