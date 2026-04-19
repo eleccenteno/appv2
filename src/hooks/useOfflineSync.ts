@@ -52,9 +52,16 @@ export function useOnlineStatus() {
 
 export function useAutosave() {
   const preventivoForm = useAppStore(s => s.preventivoForm);
-  const [lastSaved, setLastSaved] = useState<string | null>(getLastAutosaveTime());
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load last autosave time from IndexedDB on mount
+  useEffect(() => {
+    getLastAutosaveTime().then(time => {
+      if (time) setLastSaved(time);
+    }).catch(() => {});
+  }, []);
 
   // Debounced autosave — saves 2 seconds after the last change
   useEffect(() => {
@@ -69,12 +76,12 @@ export function useAutosave() {
       clearTimeout(timerRef.current);
     }
 
-    timerRef.current = setTimeout(() => {
+    timerRef.current = setTimeout(async () => {
       setIsSaving(true);
       try {
         // Get centro name from the form data if available
         const centroNombre = preventivoForm.fields['nombreCentro'] || preventivoForm.centroId;
-        saveDraft(preventivoForm, centroNombre);
+        await saveDraft(preventivoForm, centroNombre);
         setLastSaved(new Date().toISOString());
       } catch (e) {
         console.error('Autosave error:', e);
@@ -92,7 +99,7 @@ export function useAutosave() {
 
   // Cleanup old drafts on mount
   useEffect(() => {
-    cleanupOldDrafts(15);
+    cleanupOldDrafts(15).catch(() => {});
   }, []);
 
   return { lastSaved, isSaving, formattedTime: lastSaved ? formatTimeAgo(lastSaved) : null };
@@ -107,17 +114,15 @@ export function useDrafts() {
   const { setPreventivoForm, setPreventivoField, resetPreventivoForm } = useAppStore();
 
   const refreshDrafts = useCallback(() => {
-    setDrafts(listDrafts());
+    listDrafts().then(setDrafts).catch(() => {});
   }, []);
 
-  // Initialize drafts on mount (safe: only reads localStorage, no cascading renders)
-  const [initialized, setInitialized] = useState(false);
-  if (!initialized) {
-    setDrafts(listDrafts());
-    setInitialized(true);
-  }
+  // Initialize drafts on mount
+  useEffect(() => {
+    listDrafts().then(setDrafts).catch(() => {});
+  }, []);
 
-  const loadDraft = useCallback((draft: DraftData) => {
+  const loadDraftIntoStore = useCallback((draft: DraftData) => {
     // Load the form data from the draft into the store
     resetPreventivoForm();
     setPreventivoForm({
@@ -136,15 +141,14 @@ export function useDrafts() {
   }, [resetPreventivoForm, setPreventivoForm, setPreventivoField]);
 
   const removeDraft = useCallback((draftId: string) => {
-    deleteDraft(draftId);
-    refreshDrafts();
+    deleteDraft(draftId).then(() => refreshDrafts()).catch(() => {});
   }, [refreshDrafts]);
 
-  const checkForExistingDraft = useCallback((form: PreventivoFormData): DraftData | null => {
+  const checkForExistingDraft = useCallback(async (form: PreventivoFormData): Promise<DraftData | null> => {
     return loadCurrentDraft(form);
   }, []);
 
-  return { drafts, refreshDrafts, loadDraft, removeDraft, checkForExistingDraft };
+  return { drafts, refreshDrafts, loadDraft: loadDraftIntoStore, removeDraft, checkForExistingDraft };
 }
 
 // ============================================================
@@ -159,18 +163,16 @@ export function useOfflineSync() {
   const [lastSyncError, setLastSyncError] = useState<string | null>(null);
 
   const refreshPendingCount = useCallback(() => {
-    setPendingCount(getPendingSubmissions().length);
+    getPendingSubmissions().then(subs => setPendingCount(subs.length)).catch(() => {});
   }, []);
 
   // Initialize pending count on mount
-  const [countInitialized, setCountInitialized] = useState(false);
-  if (!countInitialized) {
-    setPendingCount(getPendingSubmissions().length);
-    setCountInitialized(true);
-  }
+  useEffect(() => {
+    getPendingSubmissions().then(subs => setPendingCount(subs.length)).catch(() => {});
+  }, []);
 
   const syncPendingSubmissions = useCallback(async () => {
-    const submissions = getPendingSubmissions();
+    const submissions = await getPendingSubmissions();
     if (submissions.length === 0) return;
 
     setIsSyncing(true);
@@ -232,28 +234,28 @@ export function useOfflineSync() {
 
         if (res.ok) {
           // Success — remove from queue
-          removePendingSubmission(sub.id);
+          await removePendingSubmission(sub.id);
         } else if (res.status === 409) {
           // Duplicate — remove from queue, can't retry
-          removePendingSubmission(sub.id);
+          await removePendingSubmission(sub.id);
           setLastSyncError(`Preventivo duplicado para centro ${sub.form.centroId}`);
         } else {
           // Server error — increment retry count
           const data = await res.json().catch(() => ({}));
-          updatePendingSubmission(sub.id, {
+          await updatePendingSubmission(sub.id, {
             retryCount: sub.retryCount + 1,
             lastError: data.error || `Error ${res.status}`,
           });
 
           // Give up after 5 retries
           if (sub.retryCount >= 5) {
-            removePendingSubmission(sub.id);
+            await removePendingSubmission(sub.id);
             setLastSyncError(`Descartado tras 5 intentos: ${sub.form.centroId}`);
           }
         }
       } catch (err) {
         // Network error — will retry on next online event
-        updatePendingSubmission(sub.id, {
+        await updatePendingSubmission(sub.id, {
           retryCount: sub.retryCount + 1,
           lastError: err instanceof Error ? err.message : 'Error de red',
         });
@@ -271,8 +273,11 @@ export function useOfflineSync() {
     pendingPhotos: PendingPhoto[] = []
   ) => {
     // Save to pending queue instead of sending to server
-    queuePendingSubmission(form, estado, pendingPhotos);
-    refreshPendingCount();
+    queuePendingSubmission(form, estado, pendingPhotos).then(() => {
+      refreshPendingCount();
+    }).catch(() => {
+      refreshPendingCount();
+    });
   }, [refreshPendingCount]);
 
   const getStats = useCallback(() => getStorageStats(), []);

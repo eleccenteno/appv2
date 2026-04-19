@@ -392,7 +392,7 @@ export default function TareasView() {
         const year = fields['fecha'] ? new Date(fields['fecha']).getFullYear().toString() : new Date().getFullYear().toString();
         const provincia = fields['provincia'] || selectedCentroData.provincia || 'Sin Provincia';
 
-        saveOfflinePhoto({
+        await saveOfflinePhoto({
           fieldKey,
           fieldLabel,
           base64,

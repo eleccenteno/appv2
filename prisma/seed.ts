@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import { db } from '../src/lib/db';
 
 async function main() {
@@ -98,7 +99,7 @@ async function main() {
   const toni = await db.employee.create({
     data: {
       username: 'toni',
-      password: '123',
+      password: await bcrypt.hash('123', 10),
       name: 'Toni',
       nombreCompleto: 'Antonio Jose Sanchez Vargas',
       email: 'antonio.sanchez@electronicacenteno.es',
@@ -116,7 +117,7 @@ async function main() {
   const curro = await db.employee.create({
     data: {
       username: 'curro',
-      password: 'Fjavierl007',
+      password: await bcrypt.hash('Fjavierl007', 10),
       name: 'Curro',
       nombreCompleto: 'Francisco Javier Burrero Lopez',
       email: 'fran.burrero@electronicacenteno.es',
@@ -134,7 +135,7 @@ async function main() {
   const erika = await db.employee.create({
     data: {
       username: 'erika',
-      password: 'By_eriika01',
+      password: await bcrypt.hash('By_eriika01', 10),
       name: 'Erika',
       nombreCompleto: 'Erica Serrat Calderon',
       email: 'erica@electronicacenteno.es',
@@ -152,7 +153,7 @@ async function main() {
   const moises = await db.employee.create({
     data: {
       username: 'moises',
-      password: 'Ecenteno4',
+      password: await bcrypt.hash('Ecenteno4', 10),
       name: 'Moises',
       nombreCompleto: 'Moises Santiago Andrades',
       email: 'moises@electronicacenteno.es',
@@ -170,7 +171,7 @@ async function main() {
   const miguel = await db.employee.create({
     data: {
       username: 'miguel_merideno',
-      password: 'Ecenteno5',
+      password: await bcrypt.hash('Ecenteno5', 10),
       name: 'Miguel',
       nombreCompleto: 'Miguel Angel Merideño Nevado',
       email: 'miguel.merideno@electronicacenteno.es',
@@ -188,7 +189,7 @@ async function main() {
   const paco = await db.employee.create({
     data: {
       username: 'paco',
-      password: 'Ecenteno6',
+      password: await bcrypt.hash('Ecenteno6', 10),
       name: 'Paco',
       nombreCompleto: 'Francisco Gonzalez Centeno',
       email: 'paco@electronicacenteno.es',
@@ -206,7 +207,7 @@ async function main() {
   const fran = await db.employee.create({
     data: {
       username: 'fran_hernandez',
-      password: 'Lolotronco99',
+      password: await bcrypt.hash('Lolotronco99', 10),
       name: 'Fran',
       nombreCompleto: 'Francisco Hernandez Fernandez',
       email: 'fran.hernandez@electronicacenteno.es',
@@ -225,7 +226,7 @@ async function main() {
   const fede = await db.employee.create({
     data: {
       username: 'fede',
-      password: 'Ecenteno8',
+      password: await bcrypt.hash('Ecenteno8', 10),
       name: 'Fede',
       nombreCompleto: 'Federico Garcia Urbano',
       email: 'fede@electronicacenteno.es',
@@ -243,7 +244,7 @@ async function main() {
   const ian = await db.employee.create({
     data: {
       username: 'ian_vazquez',
-      password: 'Ecenteno9',
+      password: await bcrypt.hash('Ecenteno9', 10),
       name: 'Ian',
       nombreCompleto: 'Ian Vazquez Garcia',
       email: 'ian.vazquez@electronicacenteno.es',
@@ -261,7 +262,7 @@ async function main() {
   const lolo = await db.employee.create({
     data: {
       username: 'manuel_rivera',
-      password: 'Ecenteno10',
+      password: await bcrypt.hash('Ecenteno10', 10),
       name: 'Lolo',
       nombreCompleto: 'Manuel Rivera Flores',
       email: 'manuel.rivera@electronicacenteno.es',
@@ -279,7 +280,7 @@ async function main() {
   const joseangel = await db.employee.create({
     data: {
       username: 'joseangel',
-      password: 'Atw01difusion',
+      password: await bcrypt.hash('Atw01difusion', 10),
       name: 'Jose Angel',
       nombreCompleto: 'Jose Angel Gonzalez Montaño',
       email: 'joseangel@electronicacenteno.es',
@@ -297,7 +298,7 @@ async function main() {
   const enrique = await db.employee.create({
     data: {
       username: 'pedro_lavado',
-      password: 'Ecenteno12',
+      password: await bcrypt.hash('Ecenteno12', 10),
       name: 'Enrique',
       nombreCompleto: 'Enrique Perez Gil',
       email: 'pedro.lavado@electronicacenteno.es',
@@ -315,7 +316,7 @@ async function main() {
   const ramses = await db.employee.create({
     data: {
       username: 'ramses',
-      password: 'Ecenteno13',
+      password: await bcrypt.hash('Ecenteno13', 10),
       name: 'Ramses',
       nombreCompleto: 'Ramses Gonzalez Lagos',
       email: 'ramses@electronicacenteno.es',
@@ -330,7 +331,7 @@ async function main() {
   const gonzalo = await db.employee.create({
     data: {
       username: 'gonzalo',
-      password: 'Ecenteno14',
+      password: await bcrypt.hash('Ecenteno14', 10),
       name: 'Gonzalo',
       nombreCompleto: 'Gonzalo Acosta Colmenar',
       email: 'gonzalo@electronicacenteno.es',
@@ -345,7 +346,7 @@ async function main() {
   const carrillo = await db.employee.create({
     data: {
       username: 'centenoblanca2',
-      password: 'Ecenteno15',
+      password: await bcrypt.hash('Ecenteno15', 10),
       name: 'Carrillo',
       nombreCompleto: 'Jose Antonio Carrillo Ventura',
       email: 'centenoblanca2@gmail.com',
@@ -363,7 +364,7 @@ async function main() {
   const juancarlos = await db.employee.create({
     data: {
       username: 'juancarlos',
-      password: 'Ecenteno16',
+      password: await bcrypt.hash('Ecenteno16', 10),
       name: 'Juan Carlos',
       nombreCompleto: 'Juan Carlos Ramirez Mas',
       email: 'juancarlos@electronicacenteno.es',
@@ -378,7 +379,7 @@ async function main() {
   const borrallo = await db.employee.create({
     data: {
       username: 'antonio_borrallo',
-      password: 'Ecenteno17',
+      password: await bcrypt.hash('Ecenteno17', 10),
       name: 'Antonio Borrallo',
       nombreCompleto: 'Antonio Borrallo Pereira',
       email: 'antonio.borrallo@electronicacenteno.es',
@@ -396,7 +397,7 @@ async function main() {
   const valentin = await db.employee.create({
     data: {
       username: 'centenoblanca1',
-      password: 'Ecenteno18',
+      password: await bcrypt.hash('Ecenteno18', 10),
       name: 'Valentin',
       nombreCompleto: 'Valentin Montaño Garcia',
       email: 'centenoblanca1@gmail.com',
@@ -414,7 +415,7 @@ async function main() {
   const fernando = await db.employee.create({
     data: {
       username: 'fernandoecenteno',
-      password: 'Ecenteno19',
+      password: await bcrypt.hash('Ecenteno19', 10),
       name: 'Fernando',
       nombreCompleto: 'Fernando Garcia Marquez',
       email: 'fernandoecenteno@gmail.com',
@@ -432,7 +433,7 @@ async function main() {
   const josemanuel = await db.employee.create({
     data: {
       username: 'tramitacion',
-      password: 'taller',
+      password: await bcrypt.hash('taller', 10),
       name: 'Jose Manuel',
       nombreCompleto: 'Jose Manuel Gordillo Pereira',
       email: 'tramitacion@electronicacenteno.es',
@@ -450,7 +451,7 @@ async function main() {
   const mecanico = await db.employee.create({
     data: {
       username: 'mecanico',
-      password: 'Mecanico',
+      password: await bcrypt.hash('Mecanico', 10),
       name: 'Mecanico',
       nombreCompleto: 'Mecanico',
       email: 'mecanico@electronicacenteno.es',
@@ -468,7 +469,7 @@ async function main() {
   const sara = await db.employee.create({
     data: {
       username: 'sara',
-      password: 'taller',
+      password: await bcrypt.hash('taller', 10),
       name: 'Sara',
       nombreCompleto: 'Sara Mejias',
       email: 'sara@electronicaceneno.es',
@@ -482,7 +483,7 @@ async function main() {
   const luzma = await db.employee.create({
     data: {
       username: 'luz',
-      password: 'taller',
+      password: await bcrypt.hash('taller', 10),
       name: 'Luzma',
       nombreCompleto: 'Luz Marina Gonzalez Montaño',
       email: 'luz@electronicaceneno.es',
@@ -496,7 +497,7 @@ async function main() {
   const israel = await db.employee.create({
     data: {
       username: 'israel',
-      password: 'Ecenteno22',
+      password: await bcrypt.hash('Ecenteno22', 10),
       name: 'Israel',
       nombreCompleto: 'Israel Marquez Gonzalez',
       email: 'israel@electronicacenteno.es',
@@ -509,7 +510,7 @@ async function main() {
   const angel = await db.employee.create({
     data: {
       username: 'angel_gutierrez',
-      password: 'escorpion',
+      password: await bcrypt.hash('escorpion', 10),
       name: 'Angel',
       nombreCompleto: 'Angel Gutierrez Amaya',
       email: 'angel.gutierrez@electronicacenteno.es',
@@ -527,7 +528,7 @@ async function main() {
   const david = await db.employee.create({
     data: {
       username: 'david_Delgado',
-      password: 'Ecenteno26',
+      password: await bcrypt.hash('Ecenteno26', 10),
       name: 'David',
       nombreCompleto: 'David Delgado Romero',
       email: 'david.Delgado@electronicacenteno.es',

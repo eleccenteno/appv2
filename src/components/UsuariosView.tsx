@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
+import { apiFetch } from '@/lib/api-client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
@@ -109,7 +110,7 @@ export default function UsuariosView() {
   const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/employees?stats=true');
+      const res = await apiFetch('/api/employees?stats=true');
       if (!res.ok) throw new Error('Error fetching employees');
       const data = await res.json();
       setEmployees(data.employees || []);
@@ -154,7 +155,7 @@ export default function UsuariosView() {
     }
     try {
       setSaving(true);
-      const res = await fetch('/api/employees', {
+      const res = await apiFetch('/api/employees', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -204,7 +205,7 @@ export default function UsuariosView() {
       if (formData.password && formData.password.trim() !== '') {
         body.password = formData.password;
       }
-      const res = await fetch('/api/employees', {
+      const res = await apiFetch('/api/employees', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -229,7 +230,7 @@ export default function UsuariosView() {
   const handleToggleActive = async () => {
     if (!targetEmployee) return;
     try {
-      const res = await fetch('/api/employees', {
+      const res = await apiFetch('/api/employees', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: targetEmployee.id, activo: !targetEmployee.activo }),
@@ -254,7 +255,7 @@ export default function UsuariosView() {
   const handleDelete = async () => {
     if (!targetEmployee) return;
     try {
-      const res = await fetch(`/api/employees?id=${targetEmployee.id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/employees?id=${targetEmployee.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Error eliminando empleado');

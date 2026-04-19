@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticateRequest, hashPassword } from '@/lib/auth';
 
 // POST /api/tareas/import - Importar tareas masivamente desde Excel
 export async function POST(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { tareas } = body;
@@ -181,7 +187,7 @@ export async function POST(request: NextRequest) {
             const newEmp = await db.employee.create({
               data: {
                 username: tecnicoNombre.replace(/\s+/g, '_').toLowerCase(),
-                password: 'Ecenteno00',
+                password: await hashPassword('Ecenteno00'),
                 name: displayName,
                 role: 'empleado',
                 tipo: 'Empleado',

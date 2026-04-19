@@ -47,7 +47,7 @@ export default function LoginForm() {
         return;
       }
 
-      login(data.user);
+      login(data.user, data.token);
       toast({
         title: 'Bienvenido',
         description: `Hola, ${data.user.name}`,

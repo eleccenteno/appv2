@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticateRequest, hashPassword } from '@/lib/auth';
 
 // GET /api/employees - Listar empleados con datos cruzados
 export async function GET(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const rol = searchParams.get('role');
@@ -52,6 +58,11 @@ export async function GET(request: NextRequest) {
 
 // POST /api/employees - Crear nuevo empleado
 export async function POST(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { username, password, name, nombreCompleto, email, phone, dni, role, tipo, vehiculoMarca, vehiculoModelo, vehiculoMatricula } = body;
@@ -60,10 +71,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username, password y nombre son requeridos' }, { status: 400 });
     }
 
+    // Hash password with bcrypt before storing
+    const hashedPassword = await hashPassword(password);
+
     const employee = await db.employee.create({
       data: {
         username,
-        password,
+        password: hashedPassword,
         name,
         nombreCompleto: nombreCompleto || null,
         email: email || null,
@@ -93,6 +107,11 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/employees - Actualizar empleado
 export async function PUT(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { id, ...data } = body;
@@ -101,8 +120,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'ID del empleado es requerido' }, { status: 400 });
     }
 
-    // Remove password from data if it's empty (no password change)
-    if (data.password === '' || data.password === undefined) {
+    // Hash password if provided and non-empty
+    if (data.password && data.password.trim() !== '') {
+      data.password = await hashPassword(data.password);
+    } else {
       delete data.password;
     }
 
@@ -124,6 +145,11 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/employees - Desactivar empleado (soft delete)
 export async function DELETE(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

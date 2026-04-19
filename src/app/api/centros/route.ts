@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticateRequest } from '@/lib/auth';
 
 // GET /api/centros - Listar centros con filtros avanzados y consultas cruzadas
 export async function GET(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const empresaId = searchParams.get('empresaId');
@@ -87,6 +93,11 @@ export async function GET(request: NextRequest) {
 
 // POST /api/centros - Crear nuevo centro
 export async function POST(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const {
@@ -132,18 +143,36 @@ export async function POST(request: NextRequest) {
 }
 
 // PUT /api/centros - Actualizar centro
+const CENTRO_ALLOWED_FIELDS = [
+  'codigo', 'nombre', 'direccion', 'ciudad', 'provincia', 'codigoPostal', 'latitud', 'longitud',
+  'tipoSuministro', 'parcelaEdificio', 'observaciones', 'activo', 'empresaId', 'subEmpresaId',
+];
+
 export async function PUT(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
-    const { id, ...data } = body;
+    const { id, ...rest } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID del centro es requerido' }, { status: 400 });
     }
 
+    // Build update data from whitelisted fields only (Mass Assignment fix)
+    const updateData: Record<string, unknown> = {};
+    for (const field of CENTRO_ALLOWED_FIELDS) {
+      if (rest[field] !== undefined) {
+        updateData[field] = rest[field];
+      }
+    }
+
     const centro = await db.centro.update({
       where: { id },
-      data,
+      data: updateData,
       include: {
         empresa: { select: { id: true, nombre: true } },
         subEmpresa: { select: { id: true, nombre: true } },

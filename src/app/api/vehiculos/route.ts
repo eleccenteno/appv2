@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticateRequest } from '@/lib/auth';
 
 // GET /api/vehiculos - Listar vehículos con filtros y datos cruzados
 export async function GET(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const empresaId = searchParams.get('empresaId');
@@ -37,6 +43,11 @@ export async function GET(request: NextRequest) {
 
 // POST /api/vehiculos - Crear nuevo vehículo
 export async function POST(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { marca, modelo, matricula, anio, color, kilometraje, observaciones, empresaId } = body;
@@ -68,18 +79,35 @@ export async function POST(request: NextRequest) {
 }
 
 // PUT /api/vehiculos - Actualizar vehículo
+const VEHICULO_ALLOWED_FIELDS = [
+  'marca', 'modelo', 'matricula', 'anio', 'color', 'kilometraje', 'observaciones', 'activo', 'empresaId',
+];
+
 export async function PUT(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
-    const { id, ...data } = body;
+    const { id, ...rest } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID del vehículo es requerido' }, { status: 400 });
     }
 
+    // Build update data from whitelisted fields only (Mass Assignment fix)
+    const updateData: Record<string, unknown> = {};
+    for (const field of VEHICULO_ALLOWED_FIELDS) {
+      if (rest[field] !== undefined) {
+        updateData[field] = rest[field];
+      }
+    }
+
     const vehiculo = await db.vehiculo.update({
       where: { id },
-      data,
+      data: updateData,
       include: { empresa: { select: { id: true, nombre: true } } },
     });
 

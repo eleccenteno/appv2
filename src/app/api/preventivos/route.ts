@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticateRequest } from '@/lib/auth';
+import { sanitizeFormData } from '@/lib/sanitize';
 
 // GET /api/preventivos - Listar preventivos con filtros avanzados y datos cruzados
 export async function GET(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const estado = searchParams.get('estado');
@@ -76,6 +83,11 @@ export async function GET(request: NextRequest) {
 
 // POST /api/preventivos - Crear nuevo preventivo
 export async function POST(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const {
@@ -120,8 +132,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Serializar fields a JSON string para almacenamiento completo
-    const formDataJson = fields ? JSON.stringify(fields) : null;
+    // Sanitize and serialize fields to JSON string for safe storage
+    const sanitizedFields = fields ? sanitizeFormData(fields) : null;
+    const formDataJson = sanitizedFields ? JSON.stringify(sanitizedFields) : null;
 
     const preventivo = await db.preventivo.create({
       data: {
@@ -183,26 +196,45 @@ export async function POST(request: NextRequest) {
 }
 
 // PUT /api/preventivos - Actualizar preventivo
+const PREVENTIVO_ALLOWED_FIELDS = [
+  'procedimiento', 'fecha', 'tipoSuministro', 'contadorVistaGeneral', 'contadorCaja',
+  'contadorFusibles', 'parcelaEdificio', 'observaciones', 'latitud', 'longitud', 'estado',
+  'tecnicoId', 'centroId', 'formData',
+];
+
 export async function PUT(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
-    const { id, fields, ...data } = body;
+    const { id, fields, ...rest } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID del preventivo es requerido' }, { status: 400 });
     }
 
-    if (data.fecha) data.fecha = new Date(data.fecha);
+    // Build update data from whitelisted fields only (Mass Assignment fix)
+    const updateData: Record<string, unknown> = {};
+    for (const field of PREVENTIVO_ALLOWED_FIELDS) {
+      if (rest[field] !== undefined) {
+        updateData[field] = rest[field];
+      }
+    }
 
-    // Serializar fields si viene en el body
+    if (updateData.fecha) updateData.fecha = new Date(updateData.fecha as string);
+
+    // Sanitize and serialize fields if provided in the body
     if (fields) {
-      data.formData = JSON.stringify(fields);
-      delete data.fields;
+      const sanitizedFields = sanitizeFormData(fields);
+      updateData.formData = JSON.stringify(sanitizedFields);
     }
 
     const preventivo = await db.preventivo.update({
       where: { id },
-      data,
+      data: updateData,
       include: {
         tecnico: { select: { id: true, name: true, username: true } },
         centro: { select: { id: true, codigo: true, nombre: true } },
@@ -229,6 +261,11 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/preventivos - Eliminar preventivo (solo admin)
 export async function DELETE(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

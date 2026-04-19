@@ -1,8 +1,11 @@
 /**
  * Offline Storage Utility for Preventivos
  * 
+ * Uses IndexedDB instead of localStorage to avoid the ~5-10MB limit
+ * that causes overflow with base64 photos.
+ * 
  * Provides:
- * - Auto-save form drafts to localStorage (debounced)
+ * - Auto-save form drafts (debounced)
  * - Draft management (save, load, list, delete)
  * - Offline photo queue (store base64 locally, upload when online)
  * - Pending submissions queue (save & sync when back online)
@@ -10,14 +13,214 @@
  */
 
 import { PreventivoFormData } from './store';
+import { sanitizeFormData } from './sanitize';
 
 // ============================================================
-// STORAGE KEYS
+// INDEXEDDB SETUP
 // ============================================================
-const DRAFT_PREFIX = 'ec_draft_';
-const PENDING_SUBMISSIONS_KEY = 'ec_pending_submissions';
-const OFFLINE_PHOTOS_KEY = 'ec_offline_photos';
-const LAST_AUTOSAVE_KEY = 'ec_last_autosave';
+const DB_NAME = 'centeno-offline-db';
+const DB_VERSION = 1;
+
+const STORES = {
+  drafts: 'drafts',
+  pendingSubmissions: 'pendingSubmissions',
+  offlinePhotos: 'offlinePhotos',
+  meta: 'meta',
+} as const;
+
+// Singleton DB connection
+let dbInstance: IDBDatabase | null = null;
+let dbInitPromise: Promise<IDBDatabase> | null = null;
+
+/**
+ * Open (or return the existing) IndexedDB connection.
+ * Singleton pattern ensures we don't open multiple connections.
+ */
+function getDB(): Promise<IDBDatabase> {
+  if (dbInstance) return Promise.resolve(dbInstance);
+
+  if (dbInitPromise) return dbInitPromise;
+
+  dbInitPromise = new Promise<IDBDatabase>((resolve, reject) => {
+    // Guard for SSR
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('IndexedDB not available'));
+      return;
+    }
+
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+
+      // Drafts store: key = draft ID (tecnicoId_centroId)
+      if (!db.objectStoreNames.contains(STORES.drafts)) {
+        db.createObjectStore(STORES.drafts, { keyPath: 'id' });
+      }
+
+      // Pending submissions store: key = submission id
+      if (!db.objectStoreNames.contains(STORES.pendingSubmissions)) {
+        db.createObjectStore(STORES.pendingSubmissions, { keyPath: 'id' });
+      }
+
+      // Offline photos store: key = fieldKey
+      if (!db.objectStoreNames.contains(STORES.offlinePhotos)) {
+        db.createObjectStore(STORES.offlinePhotos, { keyPath: 'fieldKey' });
+      }
+
+      // Meta store for small key-value data (last autosave time, etc.)
+      if (!db.objectStoreNames.contains(STORES.meta)) {
+        db.createObjectStore(STORES.meta, { keyPath: 'key' });
+      }
+    };
+
+    request.onsuccess = (event) => {
+      dbInstance = (event.target as IDBOpenDBRequest).result;
+
+      // Handle connection closing (e.g. version upgrade in another tab)
+      dbInstance.onclose = () => {
+        dbInstance = null;
+        dbInitPromise = null;
+      };
+
+      // Handle unexpected version change
+      dbInstance.onversionchange = () => {
+        dbInstance?.close();
+        dbInstance = null;
+        dbInitPromise = null;
+      };
+
+      resolve(dbInstance);
+    };
+
+    request.onerror = (event) => {
+      dbInitPromise = null;
+      reject((event.target as IDBOpenDBRequest).error);
+    };
+
+    request.onblocked = () => {
+      // Another tab has the DB open; just wait
+    };
+  });
+
+  return dbInitPromise;
+}
+
+// ============================================================
+// IDB HELPERS
+// ============================================================
+
+/** Run a transaction on a single store in readwrite mode */
+async function withStore<T>(
+  storeName: string,
+  mode: IDBTransactionMode,
+  fn: (store: IDBObjectStore) => IDBRequest | IDBRequest[],
+): Promise<T> {
+  const db = await getDB();
+  return new Promise<T>((resolve, reject) => {
+    const tx = db.transaction(storeName, mode);
+    const store = tx.objectStore(storeName);
+    const requests = fn(store);
+
+    // Handle single or multiple requests — resolve with last result
+    const reqs = Array.isArray(requests) ? requests : [requests];
+    const last = reqs[reqs.length - 1];
+
+    tx.oncomplete = () => {
+      resolve(last.result as T);
+    };
+    tx.onerror = () => {
+      reject(tx.error);
+    };
+    tx.onabort = () => {
+      reject(tx.error || new Error('Transaction aborted'));
+    };
+  });
+}
+
+/** Get all records from a store */
+async function getAllFromStore<T>(storeName: string): Promise<T[]> {
+  const db = await getDB();
+  return new Promise<T[]>((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      resolve(request.result as T[]);
+    };
+    request.onerror = () => {
+      reject(request.error);
+    };
+  });
+}
+
+/** Get a single record by key */
+async function getFromStore<T>(storeName: string, key: string): Promise<T | undefined> {
+  const db = await getDB();
+  return new Promise<T | undefined>((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    const request = store.get(key);
+
+    request.onsuccess = () => {
+      resolve(request.result as T | undefined);
+    };
+    request.onerror = () => {
+      reject(request.error);
+    };
+  });
+}
+
+/** Put a record into a store (insert or update) */
+async function putToStore<T>(storeName: string, value: T): Promise<void> {
+  await withStore<void>(storeName, 'readwrite', (store) => store.put(value));
+}
+
+/** Delete a record by key */
+async function deleteFromStore(storeName: string, key: string): Promise<void> {
+  await withStore<void>(storeName, 'readwrite', (store) => store.delete(key));
+}
+
+/** Clear all records in a store */
+async function clearStore(storeName: string): Promise<void> {
+  await withStore<void>(storeName, 'readwrite', (store) => store.clear());
+}
+
+/** Count records in a store */
+async function countStore(storeName: string): Promise<number> {
+  const db = await getDB();
+  return new Promise<number>((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    const request = store.count();
+
+    request.onsuccess = () => {
+      resolve(request.result);
+    };
+    request.onerror = () => {
+      reject(request.error);
+    };
+  });
+}
+
+/** Meta store helpers */
+async function getMeta(key: string): Promise<string | null> {
+  try {
+    const record = await getFromStore<{ key: string; value: string }>(STORES.meta, key);
+    return record?.value ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function setMeta(key: string, value: string): Promise<void> {
+  try {
+    await putToStore(STORES.meta, { key, value });
+  } catch {
+    // Silently fail — meta data is non-critical
+  }
+}
 
 // ============================================================
 // TYPES
@@ -67,19 +270,25 @@ export interface OfflinePhotoEntry {
 // ============================================================
 
 /**
- * Save a form draft to localStorage.
+ * Save a form draft to IndexedDB.
  * Keyed by tecnicoId + centroId to allow multiple concurrent drafts.
  */
-export function saveDraft(form: PreventivoFormData, centroNombre?: string): DraftData {
-  const id = generateDraftId(form);
+export async function saveDraft(form: PreventivoFormData, centroNombre?: string): Promise<DraftData> {
+  // Sanitize form fields before saving (XSS prevention for localStorage/IndexedDB)
+  const sanitizedForm: PreventivoFormData = {
+    ...form,
+    fields: sanitizeFormData(form.fields),
+  };
+
+  const id = generateDraftId(sanitizedForm);
   
   // Count filled fields and photos
-  const fieldCount = Object.values(form.fields).filter(v => v && v.trim() !== '').length;
+  const fieldCount = Object.values(sanitizedForm.fields).filter(v => v && v.trim() !== '').length;
   let photoCount = 0;
-  Object.values(form.fotos).forEach(arr => { photoCount += arr.length; });
-  photoCount += form.fotosAdicionales.length;
+  Object.values(sanitizedForm.fotos).forEach(arr => { photoCount += arr.length; });
+  photoCount += sanitizedForm.fotosAdicionales.length;
   // Also count image fields in form.fields that have values
-  Object.values(form.fields).forEach(v => {
+  Object.values(sanitizedForm.fields).forEach(v => {
     if (v && (v.startsWith('/api/') || v.startsWith('data:image') || v.length > 200)) {
       photoCount++;
     }
@@ -88,24 +297,24 @@ export function saveDraft(form: PreventivoFormData, centroNombre?: string): Draf
   const draft: DraftData = {
     id,
     savedAt: new Date().toISOString(),
-    tecnicoName: form.tecnicoName || 'Sin técnico',
-    centroId: form.centroId || '',
-    centroNombre: centroNombre || form.centroId || 'Sin centro',
-    fecha: form.fecha || '',
-    form,
+    tecnicoName: sanitizedForm.tecnicoName || 'Sin técnico',
+    centroId: sanitizedForm.centroId || '',
+    centroNombre: centroNombre || sanitizedForm.centroId || 'Sin centro',
+    fecha: sanitizedForm.fecha || '',
+    form: sanitizedForm,
     photoCount,
     fieldCount,
   };
 
   try {
-    localStorage.setItem(DRAFT_PREFIX + id, JSON.stringify(draft));
-    localStorage.setItem(LAST_AUTOSAVE_KEY, new Date().toISOString());
+    await putToStore(STORES.drafts, draft);
+    await setMeta('lastAutosave', new Date().toISOString());
   } catch (e) {
-    console.error('Error saving draft to localStorage:', e);
-    // localStorage might be full — try to clean up old drafts
-    cleanupOldDrafts(5);
+    console.error('Error saving draft to IndexedDB:', e);
+    // Try to clean up old drafts and retry
+    await cleanupOldDrafts(5);
     try {
-      localStorage.setItem(DRAFT_PREFIX + id, JSON.stringify(draft));
+      await putToStore(STORES.drafts, draft);
     } catch (e2) {
       console.error('Still cannot save draft after cleanup:', e2);
     }
@@ -117,11 +326,10 @@ export function saveDraft(form: PreventivoFormData, centroNombre?: string): Draf
 /**
  * Load a specific draft by ID
  */
-export function loadDraft(draftId: string): DraftData | null {
+export async function loadDraft(draftId: string): Promise<DraftData | null> {
   try {
-    const data = localStorage.getItem(DRAFT_PREFIX + draftId);
-    if (!data) return null;
-    return JSON.parse(data) as DraftData;
+    const data = await getFromStore<DraftData>(STORES.drafts, draftId);
+    return data ?? null;
   } catch {
     return null;
   }
@@ -130,7 +338,7 @@ export function loadDraft(draftId: string): DraftData | null {
 /**
  * Load the most recent draft for the current form state
  */
-export function loadCurrentDraft(form: PreventivoFormData): DraftData | null {
+export async function loadCurrentDraft(form: PreventivoFormData): Promise<DraftData | null> {
   const id = generateDraftId(form);
   return loadDraft(id);
 }
@@ -138,48 +346,46 @@ export function loadCurrentDraft(form: PreventivoFormData): DraftData | null {
 /**
  * List all saved drafts, sorted by most recent first
  */
-export function listDrafts(): DraftData[] {
-  const drafts: DraftData[] = [];
+export async function listDrafts(): Promise<DraftData[]> {
   try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith(DRAFT_PREFIX)) {
-        const data = localStorage.getItem(key);
-        if (data) {
-          try {
-            drafts.push(JSON.parse(data));
-          } catch { /* skip corrupt */ }
-        }
-      }
-    }
-  } catch { /* localStorage unavailable */ }
-  
-  return drafts.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
+    const drafts = await getAllFromStore<DraftData>(STORES.drafts);
+    return drafts.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
+  } catch {
+    return [];
+  }
 }
 
 /**
  * Delete a specific draft
  */
-export function deleteDraft(draftId: string): void {
-  localStorage.removeItem(DRAFT_PREFIX + draftId);
+export async function deleteDraft(draftId: string): Promise<void> {
+  try {
+    await deleteFromStore(STORES.drafts, draftId);
+  } catch {
+    // Silently fail
+  }
 }
 
 /**
  * Clean up old drafts, keeping only the N most recent
  */
-export function cleanupOldDrafts(keepCount: number = 10): void {
-  const drafts = listDrafts();
-  if (drafts.length > keepCount) {
-    const toDelete = drafts.slice(keepCount);
-    toDelete.forEach(d => deleteDraft(d.id));
+export async function cleanupOldDrafts(keepCount: number = 10): Promise<void> {
+  try {
+    const drafts = await listDrafts();
+    if (drafts.length > keepCount) {
+      const toDelete = drafts.slice(keepCount);
+      await Promise.all(toDelete.map(d => deleteDraft(d.id)));
+    }
+  } catch {
+    // Silently fail
   }
 }
 
 /**
  * Get the last autosave timestamp
  */
-export function getLastAutosaveTime(): string | null {
-  return localStorage.getItem(LAST_AUTOSAVE_KEY);
+export async function getLastAutosaveTime(): Promise<string | null> {
+  return getMeta('lastAutosave');
 }
 
 /**
@@ -197,17 +403,17 @@ function generateDraftId(form: PreventivoFormData): string {
 /**
  * Save a submission to the pending queue (for when connectivity returns)
  */
-export function queuePendingSubmission(
+export async function queuePendingSubmission(
   form: PreventivoFormData,
   estado: string,
   pendingPhotos: PendingPhoto[] = []
-): PendingSubmission {
-  const submissions = getPendingSubmissions();
+): Promise<PendingSubmission> {
+  const submissions = await getPendingSubmissions();
   
   const submission: PendingSubmission = {
     id: `sub_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     createdAt: new Date().toISOString(),
-    form: { ...form },
+    form: { ...form, fields: sanitizeFormData(form.fields) },
     estado,
     pendingPhotos,
     retryCount: 0,
@@ -216,7 +422,8 @@ export function queuePendingSubmission(
   submissions.push(submission);
   
   try {
-    localStorage.setItem(PENDING_SUBMISSIONS_KEY, JSON.stringify(submissions));
+    // Store the full array — we use a single key for all submissions
+    await putToStore(STORES.pendingSubmissions, { id: '__all_submissions__', submissions });
   } catch (e) {
     console.error('Error queuing pending submission:', e);
   }
@@ -227,11 +434,13 @@ export function queuePendingSubmission(
 /**
  * Get all pending submissions
  */
-export function getPendingSubmissions(): PendingSubmission[] {
+export async function getPendingSubmissions(): Promise<PendingSubmission[]> {
   try {
-    const data = localStorage.getItem(PENDING_SUBMISSIONS_KEY);
-    if (!data) return [];
-    return JSON.parse(data) as PendingSubmission[];
+    const record = await getFromStore<{ id: string; submissions: PendingSubmission[] }>(
+      STORES.pendingSubmissions,
+      '__all_submissions__',
+    );
+    return record?.submissions ?? [];
   } catch {
     return [];
   }
@@ -240,26 +449,35 @@ export function getPendingSubmissions(): PendingSubmission[] {
 /**
  * Remove a pending submission after successful sync
  */
-export function removePendingSubmission(submissionId: string): void {
-  const submissions = getPendingSubmissions().filter(s => s.id !== submissionId);
-  localStorage.setItem(PENDING_SUBMISSIONS_KEY, JSON.stringify(submissions));
+export async function removePendingSubmission(submissionId: string): Promise<void> {
+  try {
+    const submissions = (await getPendingSubmissions()).filter(s => s.id !== submissionId);
+    await putToStore(STORES.pendingSubmissions, { id: '__all_submissions__', submissions });
+  } catch {
+    // Silently fail
+  }
 }
 
 /**
  * Update a pending submission (e.g., increment retry count)
  */
-export function updatePendingSubmission(submissionId: string, updates: Partial<PendingSubmission>): void {
-  const submissions = getPendingSubmissions().map(s => 
-    s.id === submissionId ? { ...s, ...updates } : s
-  );
-  localStorage.setItem(PENDING_SUBMISSIONS_KEY, JSON.stringify(submissions));
+export async function updatePendingSubmission(submissionId: string, updates: Partial<PendingSubmission>): Promise<void> {
+  try {
+    const submissions = (await getPendingSubmissions()).map(s => 
+      s.id === submissionId ? { ...s, ...updates } : s
+    );
+    await putToStore(STORES.pendingSubmissions, { id: '__all_submissions__', submissions });
+  } catch {
+    // Silently fail
+  }
 }
 
 /**
  * Get count of pending submissions
  */
-export function getPendingSubmissionCount(): number {
-  return getPendingSubmissions().length;
+export async function getPendingSubmissionCount(): Promise<number> {
+  const submissions = await getPendingSubmissions();
+  return submissions.length;
 }
 
 // ============================================================
@@ -269,22 +487,20 @@ export function getPendingSubmissionCount(): number {
 /**
  * Save a photo to the offline queue (for uploading when back online)
  */
-export function saveOfflinePhoto(entry: OfflinePhotoEntry): void {
-  const photos = getOfflinePhotos();
-  // Replace existing entry for same fieldKey
-  const filtered = photos.filter(p => p.fieldKey !== entry.fieldKey);
-  filtered.push(entry);
-  localStorage.setItem(OFFLINE_PHOTOS_KEY, JSON.stringify(filtered));
+export async function saveOfflinePhoto(entry: OfflinePhotoEntry): Promise<void> {
+  try {
+    await putToStore(STORES.offlinePhotos, entry);
+  } catch (e) {
+    console.error('Error saving offline photo to IndexedDB:', e);
+  }
 }
 
 /**
  * Get all offline photos
  */
-export function getOfflinePhotos(): OfflinePhotoEntry[] {
+export async function getOfflinePhotos(): Promise<OfflinePhotoEntry[]> {
   try {
-    const data = localStorage.getItem(OFFLINE_PHOTOS_KEY);
-    if (!data) return [];
-    return JSON.parse(data) as OfflinePhotoEntry[];
+    return await getAllFromStore<OfflinePhotoEntry>(STORES.offlinePhotos);
   } catch {
     return [];
   }
@@ -293,16 +509,23 @@ export function getOfflinePhotos(): OfflinePhotoEntry[] {
 /**
  * Remove an offline photo after successful upload
  */
-export function removeOfflinePhoto(fieldKey: string): void {
-  const photos = getOfflinePhotos().filter(p => p.fieldKey !== fieldKey);
-  localStorage.setItem(OFFLINE_PHOTOS_KEY, JSON.stringify(photos));
+export async function removeOfflinePhoto(fieldKey: string): Promise<void> {
+  try {
+    await deleteFromStore(STORES.offlinePhotos, fieldKey);
+  } catch {
+    // Silently fail
+  }
 }
 
 /**
  * Clear all offline photos for a specific form session
  */
-export function clearOfflinePhotos(): void {
-  localStorage.removeItem(OFFLINE_PHOTOS_KEY);
+export async function clearOfflinePhotos(): Promise<void> {
+  try {
+    await clearStore(STORES.offlinePhotos);
+  } catch {
+    // Silently fail
+  }
 }
 
 // ============================================================
@@ -318,24 +541,44 @@ export function isOnline(): boolean {
 }
 
 /**
- * Calculate localStorage usage stats
+ * Calculate IndexedDB storage usage stats
  */
-export function getStorageStats(): { usedMB: number; draftsCount: number; pendingCount: number } {
-  let totalSize = 0;
+export async function getStorageStats(): Promise<{ usedMB: number; draftsCount: number; pendingCount: number }> {
   let draftsCount = 0;
-  const pendingCount = getPendingSubmissionCount();
-  
+  let pendingCount = 0;
+
   try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        const value = localStorage.getItem(key) || '';
-        totalSize += key.length + value.length;
-        if (key.startsWith(DRAFT_PREFIX)) draftsCount++;
-      }
+    draftsCount = await countStore(STORES.drafts);
+    const submissions = await getPendingSubmissions();
+    pendingCount = submissions.length;
+  } catch {
+    // Fall through with zeros
+  }
+
+  // Estimate storage usage by reading all data
+  let totalSize = 0;
+  try {
+    // Drafts
+    const drafts = await getAllFromStore<DraftData>(STORES.drafts);
+    totalSize += new Blob([JSON.stringify(drafts)]).size;
+
+    // Pending submissions
+    const subsRecord = await getFromStore<{ submissions: PendingSubmission[] }>(STORES.pendingSubmissions, '__all_submissions__');
+    if (subsRecord?.submissions) {
+      totalSize += new Blob([JSON.stringify(subsRecord.submissions)]).size;
     }
-  } catch { /* ignore */ }
-  
+
+    // Offline photos
+    const photos = await getAllFromStore<OfflinePhotoEntry>(STORES.offlinePhotos);
+    totalSize += new Blob([JSON.stringify(photos)]).size;
+
+    // Meta
+    const allMeta = await getAllFromStore<Record<string, string>>(STORES.meta);
+    totalSize += new Blob([JSON.stringify(allMeta)]).size;
+  } catch {
+    // Fall through with whatever we have
+  }
+
   return {
     usedMB: Math.round((totalSize / 1024 / 1024) * 100) / 100,
     draftsCount,

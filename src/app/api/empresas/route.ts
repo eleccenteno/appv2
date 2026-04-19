@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticateRequest } from '@/lib/auth';
 
 // GET /api/empresas - Listar todas las empresas con sus sub-empresas
 export async function GET(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const incluirSubEmpresas = searchParams.get('include') === 'subempresas';
@@ -31,6 +37,11 @@ export async function GET(request: NextRequest) {
 
 // POST /api/empresas - Crear nueva empresa
 export async function POST(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { nombre, slug, descripcion, logo } = body;

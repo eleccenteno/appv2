@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { sanitizeFormData } from '@/lib/sanitize';
+import { authenticateRequest } from '@/lib/auth';
 
 // GET /api/tareas - Listar tareas con filtros avanzados y datos cruzados
 export async function GET(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const estado = searchParams.get('estado');
@@ -69,6 +76,11 @@ export async function GET(request: NextRequest) {
 
 // POST /api/tareas - Crear nueva tarea
 export async function POST(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const {
@@ -87,8 +99,9 @@ export async function POST(request: NextRequest) {
       resolvedCentroId = centroByCodigo.id;
     }
 
-    // Serialize fields to JSON string if provided
-    const formDataJson = fields ? JSON.stringify(fields) : null;
+    // Sanitize and serialize fields to JSON string if provided
+    const sanitizedFields = fields ? sanitizeFormData(fields) : null;
+    const formDataJson = sanitizedFields ? JSON.stringify(sanitizedFields) : null;
 
     const tarea = await db.tarea.create({
       data: {
@@ -127,29 +140,47 @@ export async function POST(request: NextRequest) {
 }
 
 // PUT /api/tareas - Actualizar tarea
+const TAREA_ALLOWED_FIELDS = [
+  'titulo', 'descripcion', 'tipo', 'prioridad', 'estado', 'fechaLimite', 'fechaInicio',
+  'fechaFin', 'centroId', 'asignadoA', 'formData',
+];
+
 export async function PUT(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
-    const { id, fields, ...data } = body;
+    const { id, fields, ...rest } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID de la tarea es requerido' }, { status: 400 });
     }
 
-    // Convertir fechas si vienen en el body
-    if (data.fechaLimite) data.fechaLimite = new Date(data.fechaLimite);
-    if (data.fechaInicio) data.fechaInicio = new Date(data.fechaInicio);
-    if (data.fechaFin) data.fechaFin = new Date(data.fechaFin);
+    // Build update data from whitelisted fields only (Mass Assignment fix)
+    const updateData: Record<string, unknown> = {};
+    for (const field of TAREA_ALLOWED_FIELDS) {
+      if (rest[field] !== undefined) {
+        updateData[field] = rest[field];
+      }
+    }
 
-    // Serializar fields si viene en el body
+    // Convertir fechas si vienen en el body
+    if (updateData.fechaLimite) updateData.fechaLimite = new Date(updateData.fechaLimite as string);
+    if (updateData.fechaInicio) updateData.fechaInicio = new Date(updateData.fechaInicio as string);
+    if (updateData.fechaFin) updateData.fechaFin = new Date(updateData.fechaFin as string);
+
+    // Sanitize and serialize fields if provided in the body
     if (fields) {
-      data.formData = JSON.stringify(fields);
-      delete data.fields;
+      const sanitizedFields = sanitizeFormData(fields);
+      updateData.formData = JSON.stringify(sanitizedFields);
     }
 
     const tarea = await db.tarea.update({
       where: { id },
-      data,
+      data: updateData,
       include: {
         centro: { select: { id: true, codigo: true, nombre: true } },
         empleado: { select: { id: true, name: true, username: true } },
@@ -176,6 +207,11 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/tareas - Eliminar tarea (solo admin)
 export async function DELETE(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

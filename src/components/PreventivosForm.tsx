@@ -63,7 +63,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getCentroPreFillData } from '@/lib/centro-to-preventivo-map';
 import { compressImage, formatFileSize } from '@/lib/image-compress';
 import { useOnlineStatus, useAutosave, useDrafts, useOfflineSync } from '@/hooks/useOfflineSync';
-import { saveOfflinePhoto, removeOfflinePhoto, getOfflinePhotos, DraftData, formatTimeAgo } from '@/lib/offline-storage';
+import { saveOfflinePhoto, DraftData, formatTimeAgo } from '@/lib/offline-storage';
 
 // Section icon mapping
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -184,10 +184,11 @@ export default function PreventivosForm() {
 
   // Check for existing draft on mount (draft recovery)
   useEffect(() => {
-    const existing = checkForExistingDraft(preventivoForm);
-    if (existing && existing.fieldCount > 0) {
-      setShowDraftRecovery(existing);
-    }
+    checkForExistingDraft(preventivoForm).then(existing => {
+      if (existing && existing.fieldCount > 0) {
+        setShowDraftRecovery(existing);
+      }
+    }).catch(() => {});
   }, []);
 
   // Set default date
@@ -483,7 +484,7 @@ export default function PreventivosForm() {
         const provincia = preventivoForm.fields['provincia'] || selectedCentro.provincia || 'Sin Provincia';
 
         // Save to offline photo queue
-        saveOfflinePhoto({
+        await saveOfflinePhoto({
           fieldKey,
           fieldLabel,
           base64,

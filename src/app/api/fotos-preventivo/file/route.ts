@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFile, stat } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { authenticateRequest } from '@/lib/auth';
 
 // Base directory for storing preventivo photos
 const PHOTOS_BASE_DIR = path.join(process.cwd(), 'fotografias preventivos atw');
@@ -13,6 +14,11 @@ const PHOTOS_BASE_DIR = path.join(process.cwd(), 'fotografias preventivos atw');
  * The path parameter should be the relative path within the photos directory.
  */
 export async function GET(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const relativePath = searchParams.get('path');

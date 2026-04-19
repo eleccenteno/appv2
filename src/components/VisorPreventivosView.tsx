@@ -1,8 +1,10 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppStore } from '@/lib/store';
 import { useSchemaStore } from '@/lib/schema-store';
+import { apiFetch } from '@/lib/api-client';
 import { FormSection, FormField, cloneSections } from '@/lib/preventivo-schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -98,9 +100,9 @@ function getEstadoConfig(estado: string): EstadoConfig {
       return {
         label: 'Pendiente',
         gradient: 'from-amber-500 to-orange-500',
-        bg: 'bg-amber-50',
-        text: 'text-amber-700',
-        border: 'border-amber-200',
+        bg: 'bg-amber-50 dark:bg-amber-950/40',
+        text: 'text-amber-700 dark:text-amber-300',
+        border: 'border-amber-200 dark:border-amber-800/50',
         dot: 'bg-amber-400',
         icon: Clock,
       };
@@ -108,9 +110,9 @@ function getEstadoConfig(estado: string): EstadoConfig {
       return {
         label: 'En Progreso',
         gradient: 'from-blue-500 to-cyan-500',
-        bg: 'bg-blue-50',
-        text: 'text-blue-700',
-        border: 'border-blue-200',
+        bg: 'bg-blue-50 dark:bg-blue-950/40',
+        text: 'text-blue-700 dark:text-blue-300',
+        border: 'border-blue-200 dark:border-blue-800/50',
         dot: 'bg-blue-400',
         icon: Activity,
       };
@@ -118,9 +120,9 @@ function getEstadoConfig(estado: string): EstadoConfig {
       return {
         label: 'Completado',
         gradient: 'from-teal-500 to-emerald-500',
-        bg: 'bg-teal-50',
-        text: 'text-teal-700',
-        border: 'border-teal-200',
+        bg: 'bg-teal-50 dark:bg-teal-950/40',
+        text: 'text-teal-700 dark:text-teal-300',
+        border: 'border-teal-200 dark:border-teal-800/50',
         dot: 'bg-teal-400',
         icon: CheckCircle2,
       };
@@ -128,9 +130,9 @@ function getEstadoConfig(estado: string): EstadoConfig {
       return {
         label: 'Enviado',
         gradient: 'from-green-500 to-lime-500',
-        bg: 'bg-green-50',
-        text: 'text-green-700',
-        border: 'border-green-200',
+        bg: 'bg-green-50 dark:bg-green-950/40',
+        text: 'text-green-700 dark:text-green-300',
+        border: 'border-green-200 dark:border-green-800/50',
         dot: 'bg-green-400',
         icon: Send,
       };
@@ -138,9 +140,9 @@ function getEstadoConfig(estado: string): EstadoConfig {
       return {
         label: 'Borrador',
         gradient: 'from-gray-400 to-gray-500',
-        bg: 'bg-gray-50',
-        text: 'text-gray-600',
-        border: 'border-gray-200',
+        bg: 'bg-gray-50 dark:bg-gray-800/40',
+        text: 'text-gray-600 dark:text-gray-300',
+        border: 'border-gray-200 dark:border-gray-700/50',
         dot: 'bg-gray-400',
         icon: FilePen,
       };
@@ -148,9 +150,9 @@ function getEstadoConfig(estado: string): EstadoConfig {
       return {
         label: estado,
         gradient: 'from-gray-400 to-gray-500',
-        bg: 'bg-gray-50',
-        text: 'text-gray-600',
-        border: 'border-gray-200',
+        bg: 'bg-gray-50 dark:bg-gray-800/40',
+        text: 'text-gray-600 dark:text-gray-300',
+        border: 'border-gray-200 dark:border-gray-700/50',
         dot: 'bg-gray-400',
         icon: AlertCircle,
       };
@@ -219,7 +221,7 @@ export default function VisorPreventivosView() {
       setLoading(true);
       const params = new URLSearchParams();
       if (filterEstado && filterEstado !== 'todos') params.set('estado', filterEstado);
-      const res = await fetch(`/api/preventivos?${params.toString()}`);
+      const res = await apiFetch(`/api/preventivos?${params.toString()}`);
       if (!res.ok) throw new Error('Error al cargar preventivos');
       const data = await res.json();
       setPreventivos(data.preventivos || []);
@@ -511,8 +513,8 @@ export default function VisorPreventivosView() {
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-24">
-            <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
-              <AlertCircle className="h-8 w-8 text-red-400" />
+            <div className="w-16 h-16 rounded-2xl bg-red-50 dark:bg-red-950/40 flex items-center justify-center mb-4">
+              <AlertCircle className="h-8 w-8 text-red-400 dark:text-red-500" />
             </div>
             <p className="text-sm text-red-600 font-medium">{error}</p>
             <Button variant="outline" size="sm" className="mt-4 rounded-xl"
@@ -894,7 +896,7 @@ function PreventivoDetailDialog({
   const saveEdit = async () => {
     setIsSaving(true);
     try {
-      const res = await fetch('/api/preventivos', {
+      const res = await apiFetch('/api/preventivos', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: preventivo.id, fields: editFields }),
@@ -917,7 +919,7 @@ function PreventivoDetailDialog({
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/preventivos?id=${preventivo.id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/preventivos?id=${preventivo.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Error al eliminar');
@@ -966,84 +968,97 @@ function PreventivoDetailDialog({
       <DialogContent className="max-w-2xl max-h-[92vh] overflow-hidden p-0 gap-0">
         {/* Compact header */}
         <div className={`${estadoConfig.bg} border-b ${estadoConfig.border}`}>
-          <div className="px-4 pt-3 pb-2.5">
+          <div className="px-5 py-3">
+            {/* Title row */}
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-sm">
-                <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${estadoConfig.gradient} flex items-center justify-center`}>
-                  {isEditing ? <Pencil className="h-3.5 w-3.5 text-white" /> : <Eye className="h-3.5 w-3.5 text-white" />}
+              <DialogTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${estadoConfig.gradient} flex items-center justify-center shadow-sm`}>
+                    {isEditing ? <Pencil className="h-4 w-4 text-white" /> : <Eye className="h-4 w-4 text-white" />}
+                  </div>
+                  <span className="text-foreground font-semibold text-sm">{isEditing ? 'Editando Preventivo' : 'Detalle del Preventivo'}</span>
                 </div>
-                <span className="text-foreground font-semibold">{isEditing ? 'Editando Preventivo' : 'Detalle del Preventivo'}</span>
+                {/* Admin action buttons */}
+                {isAdmin && !isEditing && (
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={enterEditMode}
+                      className="h-7 gap-1.5 text-[11px] px-2.5"
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Editar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="h-7 gap-1.5 text-[11px] px-2.5"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </DialogTitle>
             </DialogHeader>
 
-            <div className="mt-2 flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-lg ${estadoConfig.bg} flex items-center justify-center shrink-0 border ${estadoConfig.border}`}>
-                <EstadoIcon className={`h-4 w-4 ${estadoConfig.text}`} />
+            {/* Center info row */}
+            <div className="mt-2.5 flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${estadoConfig.gradient} flex items-center justify-center shrink-0 shadow-sm`}>
+                <EstadoIcon className="h-4.5 w-4.5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="font-bold text-sm text-foreground leading-tight truncate">
                   {preventivo.centro?.nombre || preventivo.centro?.codigo}
                 </h2>
                 <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                  <Badge className={`${estadoConfig.bg} ${estadoConfig.text} border ${estadoConfig.border} text-[9px] font-semibold rounded-md px-1.5 h-4`}>
+                  <Badge className={`${estadoConfig.bg} ${estadoConfig.text} border ${estadoConfig.border} text-[10px] font-semibold rounded-md px-2 h-5`}>
                     {estadoConfig.label}
                   </Badge>
                   {preventivo.procedimiento && (
-                    <Badge variant="secondary" className="text-[9px] rounded-md px-1.5 h-4">
+                    <Badge variant="secondary" className="text-[10px] rounded-md px-2 h-5">
                       {preventivo.procedimiento}
                     </Badge>
                   )}
                   {preventivo.centro?.subEmpresa && (
-                    <Badge variant="outline" className="text-[9px] rounded-md px-1.5 h-4">
+                    <Badge variant="outline" className="text-[10px] rounded-md px-2 h-5">
                       {preventivo.centro.subEmpresa.nombre}
                     </Badge>
                   )}
                 </div>
               </div>
-
-              {/* Admin action buttons in header */}
-              {isAdmin && !isEditing && (
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={enterEditMode}
-                    className="h-7 gap-1 text-[11px] px-2"
-                  >
-                    <Pencil className="h-3 w-3" />
-                    Editar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="h-7 gap-1 text-[11px] px-2"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              )}
             </div>
 
-            {/* Compact stats row */}
-            <div className="mt-2 flex items-center gap-3 text-[11px]">
-              <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                <span className="text-muted-foreground">Completado</span>
-                <span className="font-bold text-foreground">{totalPct}%</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span className="text-muted-foreground">{totalFilled}/{totalFields}</span>
-              </div>
-              {preventivo.fotos && preventivo.fotos.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <Camera className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-muted-foreground">{preventivo.fotos.length}</span>
+            {/* Stats row */}
+            <div className="mt-2.5 flex items-center justify-between text-[11px]">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                  <span className="text-muted-foreground">Completado</span>
+                  <span className="font-bold text-foreground">{totalPct}%</span>
                 </div>
-              )}
-              <div className="flex-1" />
-              <span className="text-muted-foreground">{fecha}</span>
+                <div className="w-px h-3 bg-border/50" />
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 dark:bg-emerald-500" />
+                  <span className="text-muted-foreground">Campos</span>
+                  <span className="font-bold text-foreground">{totalFilled}/{totalFields}</span>
+                </div>
+                {preventivo.fotos && preventivo.fotos.length > 0 && (
+                  <>
+                    <div className="w-px h-3 bg-border/50" />
+                    <div className="flex items-center gap-1.5">
+                      <Camera className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-muted-foreground">Fotos</span>
+                      <span className="font-bold text-foreground">{preventivo.fotos.length}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{fecha}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1072,8 +1087,8 @@ function PreventivoDetailDialog({
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
             <div className="bg-card rounded-2xl shadow-2xl border border-border p-6 mx-4 max-w-md w-full">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
-                  <AlertCircle className="h-6 w-6 text-red-600" />
+                <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-950/50 flex items-center justify-center shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
                   <h3 className="font-bold text-foreground text-base">¿Eliminar preventivo?</h3>
@@ -1189,7 +1204,7 @@ function PreventivoDetailDialog({
                             </div>
                           )}
                         </div>
-                        <Badge variant="secondary" className={`text-[11px] rounded-lg px-2.5 h-6 ${hasData ? 'bg-teal-50 text-teal-700 font-semibold' : 'bg-muted text-muted-foreground'}`}>
+                        <Badge variant="secondary" className={`text-[11px] rounded-lg px-2.5 h-6 ${hasData ? 'bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 font-semibold' : 'bg-muted text-muted-foreground'}`}>
                           {filled}/{total}
                         </Badge>
                         {isExpanded

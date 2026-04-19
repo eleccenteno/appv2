@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { authenticateRequest } from '@/lib/auth';
 
 // Base directory for storing preventivo photos
 const PHOTOS_BASE_DIR = path.join(process.cwd(), 'fotografias preventivos atw');
@@ -23,6 +24,11 @@ const PHOTOS_BASE_DIR = path.join(process.cwd(), 'fotografias preventivos atw');
  * - index: Optional index for multiple photos in same field (0-based)
  */
 export async function POST(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -102,6 +108,11 @@ export async function POST(request: NextRequest) {
  * Delete a photo by its relative path
  */
 export async function DELETE(request: NextRequest) {
+  const authUser = await authenticateRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const relativePath = searchParams.get('path');

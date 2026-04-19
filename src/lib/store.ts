@@ -81,6 +81,7 @@ interface AppState {
   // Auth
   isLoggedIn: boolean;
   currentUser: Employee | null;
+  token: string | null;
   rememberMe: boolean;
 
   // Navigation
@@ -99,8 +100,9 @@ interface AppState {
   fontSizeLevel: FontSizeLevel;
 
   // Actions
-  login: (user: Employee) => void;
+  login: (user: Employee, token: string) => void;
   logout: () => void;
+  setToken: (token: string | null) => void;
   setRememberMe: (value: boolean) => void;
   setCurrentView: (view: ViewType) => void;
   goBack: () => void;
@@ -126,6 +128,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Auth
   isLoggedIn: false,
   currentUser: null,
+  token: typeof window !== 'undefined' ? localStorage.getItem('app-token') : null,
   rememberMe: false,
 
   // Navigation
@@ -144,8 +147,28 @@ export const useAppStore = create<AppState>((set, get) => ({
   fontSizeLevel: (typeof window !== 'undefined' && localStorage.getItem('app-font-size') as FontSizeLevel) || 'normal',
 
   // Actions
-  login: (user) => set({ isLoggedIn: true, currentUser: user, currentView: 'inicio', navigationHistory: [] }),
-  logout: () => set({ isLoggedIn: false, currentUser: null, currentView: 'login', navigationHistory: [], preventivoForm: initialPreventivoForm, preventivoStep: 1 }),
+  login: (user, token) => {
+    if (typeof window !== 'undefined' && token) {
+      localStorage.setItem('app-token', token);
+    }
+    set({ isLoggedIn: true, currentUser: user, token, currentView: 'inicio', navigationHistory: [] });
+  },
+  logout: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('app-token');
+    }
+    set({ isLoggedIn: false, currentUser: null, token: null, currentView: 'login', navigationHistory: [], preventivoForm: initialPreventivoForm, preventivoStep: 1 });
+  },
+  setToken: (token) => {
+    if (typeof window !== 'undefined') {
+      if (token) {
+        localStorage.setItem('app-token', token);
+      } else {
+        localStorage.removeItem('app-token');
+      }
+    }
+    set({ token });
+  },
   setRememberMe: (value) => set({ rememberMe: value }),
   setCurrentView: (view) => set((state) => ({
     currentView: view,
