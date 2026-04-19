@@ -5,21 +5,16 @@ async function main() {
   console.log('🌱 Iniciando seed de la base de datos...');
 
   // ============================================================
-  // LIMPIAR DATOS EXISTENTES
+  // SEGURIDAD: Solo ejecutar si la DB está vacía
   // ============================================================
-  console.log('🧹 Limpiando datos existentes...');
-  await db.fotoTarea.deleteMany();
-  await db.fotoMantenimiento.deleteMany();
-  await db.fotoPreventivo.deleteMany();
-  await db.mantenimientoVehiculo.deleteMany();
-  await db.vehiculoAsignacion.deleteMany();
-  await db.tarea.deleteMany();
-  await db.preventivo.deleteMany();
-  await db.vehiculo.deleteMany();
-  await db.centro.deleteMany();
-  await db.subEmpresa.deleteMany();
-  await db.empresa.deleteMany();
-  await db.employee.deleteMany();
+  const existingEmployees = await db.employee.count();
+  if (existingEmployees > 0) {
+    console.log('⚠️  La base de datos ya contiene datos. Saltando seed para preservar datos existentes.');
+    console.log('   Si necesitas resetear, usa: bun run prisma/hash-passwords.ts');
+    console.log('   Si necesitas un seed completo, borra la DB manualmente primero:');
+    console.log('   rm db/custom.db && bun run db:push && bun run prisma/seed.ts');
+    return;
+  }
 
   // ============================================================
   // EMPRESAS
@@ -222,7 +217,6 @@ async function main() {
     },
   });
 
-  // Empleados adicionales (19 nuevos)
   const fede = await db.employee.create({
     data: {
       username: 'fede',
@@ -543,25 +537,19 @@ async function main() {
   // ============================================================
   console.log('📍 Creando centros...');
   const centrosData = [
-    // Centros OnTower
     { codigo: 'OT-ZAFRA-001', nombre: 'ZAFRA POLIGONO ATW', direccion: 'Polígono ATW, Zafra', ciudad: 'Zafra', provincia: 'Badajoz', codigoPostal: '06300', latitud: 38.4175, longitud: -6.4225, tipoSuministro: 'Trifásico', empresaId: cellnex.id, subEmpresaId: ontower.id },
     { codigo: 'OT-BADAJOZ-001', nombre: 'Centro Badajoz Norte', direccion: 'Calle Menacho 25', ciudad: 'Badajoz', provincia: 'Badajoz', codigoPostal: '06001', latitud: 38.8786, longitud: -6.9703, tipoSuministro: 'Monofásico', empresaId: cellnex.id, subEmpresaId: ontower.id },
     { codigo: 'OT-MERIDA-001', nombre: 'Centro Mérida Sur', direccion: 'Avda. de la Libertad 12', ciudad: 'Mérida', provincia: 'Badajoz', codigoPostal: '06800', latitud: 38.9161, longitud: -6.3438, tipoSuministro: 'Trifásico', empresaId: cellnex.id, subEmpresaId: ontower.id },
     { codigo: 'OT-CACERES-001', nombre: 'Centro Cáceres Centro', direccion: 'Plaza Mayor 3', ciudad: 'Cáceres', provincia: 'Cáceres', codigoPostal: '10001', latitud: 39.4752, longitud: -6.3723, tipoSuministro: 'Trifásico con neutro', empresaId: cellnex.id, subEmpresaId: ontower.id },
     { codigo: 'OT-PLASENCIA-001', nombre: 'Centro Plasencia', direccion: 'Calle Vidre 8', ciudad: 'Plasencia', provincia: 'Cáceres', codigoPostal: '10600', latitud: 40.0297, longitud: -6.0867, tipoSuministro: 'Monofásico', empresaId: cellnex.id, subEmpresaId: ontower.id },
     { codigo: 'OT-NAVALMORAL-001', nombre: 'Centro Navalmoral', direccion: 'Avda. de España 15', ciudad: 'Navalmoral de la Mata', provincia: 'Cáceres', codigoPostal: '10300', latitud: 39.8947, longitud: -5.5386, tipoSuministro: 'Trifásico', empresaId: cellnex.id, subEmpresaId: ontower.id },
-    // Centros Retevision
     { codigo: 'RV-BADAJOZ-001', nombre: 'Centro Retevision Badajoz', direccion: 'Calle San Juan 10', ciudad: 'Badajoz', provincia: 'Badajoz', codigoPostal: '06002', latitud: 38.8800, longitud: -6.9750, tipoSuministro: 'Trifásico', empresaId: cellnex.id, subEmpresaId: retevision.id },
     { codigo: 'RV-MERIDA-001', nombre: 'Centro Retevision Mérida', direccion: 'Calle Santa Eulalia 5', ciudad: 'Mérida', provincia: 'Badajoz', codigoPostal: '06801', latitud: 38.9180, longitud: -6.3400, tipoSuministro: 'Monofásico con neutro', empresaId: cellnex.id, subEmpresaId: retevision.id },
-    // Centros Axion
     { codigo: 'AX-CACERES-001', nombre: 'Centro Axion Cáceres', direccion: 'Ronda de San Francisco 7', ciudad: 'Cáceres', provincia: 'Cáceres', codigoPostal: '10002', latitud: 39.4780, longitud: -6.3700, tipoSuministro: 'Trifásico', empresaId: cellnex.id, subEmpresaId: axion.id },
     { codigo: 'AX-ZAFRA-001', nombre: 'Centro Axion Zafra', direccion: 'Calle de la Fuente 22', ciudad: 'Zafra', provincia: 'Badajoz', codigoPostal: '06301', latitud: 38.4200, longitud: -6.4150, tipoSuministro: 'Monofásico', empresaId: cellnex.id, subEmpresaId: axion.id },
-    // Centros GameSystem
     { codigo: 'GS-BADAJOZ-001', nombre: 'Centro GameSystem Badajoz', direccion: 'Paseo de San Francisco 18', ciudad: 'Badajoz', provincia: 'Badajoz', codigoPostal: '06003', tipoSuministro: 'Trifásico', empresaId: cellnex.id, subEmpresaId: gamesystem.id },
-    // Centros Insyte
     { codigo: 'IN-BADAJOZ-001', nombre: 'Centro Insyte Badajoz', direccion: 'Avda. de Elvas s/n', ciudad: 'Badajoz', provincia: 'Badajoz', codigoPostal: '06006', tipoSuministro: 'Trifásico', empresaId: insyte.id },
     { codigo: 'IN-CACERES-001', nombre: 'Centro Insyte Cáceres', direccion: 'Calle Moret 30', ciudad: 'Cáceres', provincia: 'Cáceres', codigoPostal: '10003', tipoSuministro: 'Monofásico', empresaId: insyte.id },
-    // Centros Centeno
     { codigo: 'CE-ZAFRA-001', nombre: 'Centro Centeno Zafra', direccion: 'Polígono Industrial ATW', ciudad: 'Zafra', provincia: 'Badajoz', codigoPostal: '06300', latitud: 38.4180, longitud: -6.4200, tipoSuministro: 'Trifásico', empresaId: centeno.id },
     { codigo: 'CE-BADAJOZ-001', nombre: 'Centro Centeno Badajoz', direccion: 'Calle San Roque 14', ciudad: 'Badajoz', provincia: 'Badajoz', codigoPostal: '06004', tipoSuministro: 'Monofásico', empresaId: centeno.id },
   ];
@@ -612,7 +600,6 @@ async function main() {
     },
   });
 
-  // Asignaciones de vehículos
   await db.vehiculoAsignacion.createMany({
     data: [
       { vehiculoId: vehiculo1.id, empleadoId: toni.id, fechaInicio: new Date('2024-01-01') },
@@ -621,7 +608,6 @@ async function main() {
     ],
   });
 
-  // Mantenimientos de vehículos
   await db.mantenimientoVehiculo.createMany({
     data: [
       { vehiculoId: vehiculo1.id, tipo: 'preventivo', descripcion: 'Cambio de aceite y filtros', fecha: new Date('2024-03-15'), kilometraje: 40000, costo: 250, taller: 'AutoTaller Zafra', estado: 'completado' },
