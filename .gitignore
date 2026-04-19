@@ -82,4 +82,4 @@ start-dev.sh
 gh
 
 # Z-AI SDK config
-.z-ai-config
+.z-ai-config.zscripts/
