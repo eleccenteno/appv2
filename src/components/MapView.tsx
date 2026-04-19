@@ -23,7 +23,6 @@ import {
   ChevronLeft,
   Search,
   X,
-  Filter,
   MapPin,
   Navigation,
   Layers,
@@ -37,16 +36,13 @@ import {
   Radio,
   Sun,
   Database,
-  Eye,
   List,
   Map,
   Satellite,
   Mountain,
   LocateFixed,
   SlidersHorizontal,
-  ChevronRight,
   Crosshair,
-  Compass,
 } from 'lucide-react';
 
 import dynamic from 'next/dynamic';
@@ -138,14 +134,14 @@ function MapMarkers({ centros, onMarkerClick }: { centros: CentroData[]; onMarke
       import('leaflet'),
       import('react-leaflet'),
     ]).then(([leafletMod, rlMod]) => {
-      const L = leafletMod.default;
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
+      const leaflet = leafletMod.default;
+      delete (leaflet.Icon.Default.prototype as any)._getIconUrl;
+      leaflet.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
         iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       });
-      setL(L);
+      setL(leaflet);
       setComponents({
         Marker: rlMod.Marker,
         Popup: rlMod.Popup,
@@ -158,48 +154,40 @@ function MapMarkers({ centros, onMarkerClick }: { centros: CentroData[]; onMarke
 
   const { Marker, Tooltip } = components;
 
+  // ─── Beautiful SVG pin marker ─────────────────────────────────
   const getIcon = (prioridad: string, tipo: string) => {
     const config = PRIORIDAD_CONFIG[prioridad] || PRIORIDAD_CONFIG.P3;
-    const size = tipo === 'INDOOR' ? 24 : 28;
-    const shape = tipo === 'INDOOR' ? 'circle' : 'diamond';
+    const isIndoor = tipo === 'INDOOR';
+    const pinW = isIndoor ? 26 : 30;
+    const pinH = isIndoor ? 34 : 40;
+    const label = prioridad.replace('P3 AIRE', 'A³').replace('P', '');
+    const uid = `p${prioridad.replace(' ', '-')}-${isIndoor ? 'i' : 'o'}`;
 
     return L.divIcon({
       html: `
-        <div style="
-          width: ${size}px;
-          height: ${size}px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-        ">
-          <div style="
-            width: ${size}px;
-            height: ${size}px;
-            background: ${config.color};
-            border: 2px solid white;
-            border-radius: ${shape === 'circle' ? '50%' : '4px'};
-            box-shadow: 0 2px 6px rgba(0,0,0,0.35), 0 0 0 1px ${config.color}40;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transform: ${shape === 'diamond' ? 'rotate(45deg)' : 'none'};
-          ">
-            <span style="
-              color: white;
-              font-size: ${size < 26 ? 7 : 8}px;
-              font-weight: 800;
-              ${shape === 'diamond' ? 'transform: rotate(-45deg)' : ''}
-              line-height: 1;
-              text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            ">${prioridad.replace('P3 AIRE', 'A³').replace('P', '')}</span>
-          </div>
-        </div>
+        <svg width="${pinW}" height="${pinH}" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,0.25))">
+          <defs>
+            <linearGradient id="${uid}" x1="50%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" stop-color="${config.color}" />
+              <stop offset="100%" stop-color="${config.color}" stop-opacity="0.75" />
+            </linearGradient>
+          </defs>
+          <ellipse cx="15" cy="38" rx="5" ry="2" fill="rgba(0,0,0,0.12)"/>
+          <path d="M15 37 C15 37 4 23 4 14.5 C4 7.6 8.9 3 15 3 C21.1 3 26 7.6 26 14.5 C26 23 15 37 15 37Z"
+                fill="url(#${uid})" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
+          ${isIndoor
+            ? '<circle cx="15" cy="14" r="6" fill="white" fill-opacity="0.3"/>'
+            : '<rect x="10" y="9" width="10" height="10" rx="2" fill="white" fill-opacity="0.2"/>'}
+          <text x="15" y="17.5" text-anchor="middle" dominant-baseline="central"
+                fill="white" font-size="9" font-weight="800"
+                font-family="system-ui,-apple-system,sans-serif"
+                style="text-shadow:0 1px 2px rgba(0,0,0,0.25)">${label}</text>
+        </svg>
       `,
       className: 'custom-marker',
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-      popupAnchor: [0, -size / 2 - 4],
+      iconSize: [pinW, pinH],
+      iconAnchor: [pinW / 2, pinH],
+      popupAnchor: [0, -pinH - 2],
     });
   };
 
@@ -218,7 +206,7 @@ function MapMarkers({ centros, onMarkerClick }: { centros: CentroData[]; onMarke
               click: () => onMarkerClick(centro),
             }}
           >
-            <Tooltip direction="top" offset={[0, -8]} className="font-sans">
+            <Tooltip direction="top" offset={[0, -14]} className="font-sans">
               <div className="text-xs">
                 <span className="font-bold">{centro.nombre}</span>
                 <span className="text-gray-500 ml-1">({centro.codigo})</span>
@@ -307,15 +295,27 @@ export default function MapView() {
   const [filterPrioridad, setFilterPrioridad] = useState<string>('all');
   const [filterTipo, setFilterTipo] = useState<string>('all');
 
-  // UI
-  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
-  const [listSheetOpen, setListSheetOpen] = useState(false);
+  // UI — only ONE sheet open at a time
+  const [activeSheet, setActiveSheet] = useState<'filter' | 'list' | 'detail' | null>(null);
   const [detailCentro, setDetailCentro] = useState<CentroData | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
   const [flyTo, setFlyTo] = useState<[number, number] | null>(null);
   const [mapStyle, setMapStyle] = useState<'street' | 'satellite' | 'topo'>('street');
   const [fitBoundsTrigger, setFitBoundsTrigger] = useState(0);
-  const [searchFocused, setSearchFocused] = useState(false);
+
+  // Derived booleans for sheets
+  const filterSheetOpen = activeSheet === 'filter';
+  const listSheetOpen = activeSheet === 'list';
+  const detailOpen = activeSheet === 'detail';
+
+  // ─── Sheet helpers (mutual exclusion) ─────────────────────────
+
+  const openSheet = useCallback((sheet: 'filter' | 'list' | 'detail') => {
+    setActiveSheet(sheet);
+  }, []);
+
+  const closeSheet = useCallback(() => {
+    setActiveSheet(null);
+  }, []);
 
   // ─── Load Data ────────────────────────────────────────────────
 
@@ -323,7 +323,6 @@ export default function MapView() {
     setMounted(true);
     import('leaflet').then(mod => { leafletModule = mod.default; });
 
-    // Load Leaflet CSS
     if (!document.querySelector('link[href*="leaflet"]')) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
@@ -407,8 +406,8 @@ export default function MapView() {
 
   const handleMarkerClick = useCallback((centro: CentroData) => {
     setDetailCentro(centro);
-    setDetailOpen(true);
-  }, []);
+    openSheet('detail');
+  }, [openSheet]);
 
   const handleFlyToCentro = useCallback((centro: CentroData) => {
     const parts = centro.localizacion?.split(',').map(s => parseFloat(s.trim()));
@@ -417,9 +416,8 @@ export default function MapView() {
       setTimeout(() => setFlyTo(null), 1500);
     }
     setDetailCentro(centro);
-    setDetailOpen(true);
-    setListSheetOpen(false);
-  }, []);
+    openSheet('detail');
+  }, [openSheet]);
 
   const clearFilters = useCallback(() => {
     setSearchText('');
@@ -488,25 +486,34 @@ export default function MapView() {
           showCoverageOnHover={false}
           iconCreateFunction={(cluster: any) => {
             const count = cluster.getChildCount();
-            const size = count < 10 ? 40 : count < 50 ? 50 : 60;
+            const size = count < 10 ? 42 : count < 50 ? 52 : 62;
             const markers = cluster.getAllChildMarkers();
             let hasP1 = false;
             markers.forEach((m: any) => { if (m.options?.icon?.options?.html?.includes('#ef4444')) hasP1 = true; });
 
-            const color = hasP1 ? '#ef4444' : '#6366f1';
+            const color1 = hasP1 ? '#ef4444' : '#6366f1';
+            const color2 = hasP1 ? '#dc2626' : '#4f46e5';
+            const fontSize = size < 45 ? 13 : 15;
             if (!leafletModule) return null;
             return leafletModule.divIcon({
               html: `
-                <div style="
-                  width: ${size}px; height: ${size}px;
-                  background: ${color}dd;
-                  border: 3px solid white;
-                  border-radius: 50%;
-                  box-shadow: 0 3px 12px rgba(0,0,0,0.3);
-                  display: flex; align-items: center; justify-content: center;
-                  color: white; font-weight: 800; font-size: ${size < 45 ? 12 : 14}px;
-                  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-                ">${count}</div>
+                <div style="position:relative;width:${size}px;height:${size}px;">
+                  <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25))">
+                    <defs>
+                      <radialGradient id="cg${count}${hasP1?1:0}">
+                        <stop offset="0%" stop-color="${color1}"/>
+                        <stop offset="100%" stop-color="${color2}" stop-opacity="0.85"/>
+                      </radialGradient>
+                    </defs>
+                    <circle cx="${size/2}" cy="${size/2}" r="${size/2 - 3}" fill="url(#cg${count}${hasP1?1:0})" stroke="white" stroke-width="2.5"/>
+                  </svg>
+                  <span style="
+                    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                    color:white;font-weight:800;font-size:${fontSize}px;
+                    text-shadow:0 1px 2px rgba(0,0,0,0.3);line-height:1;
+                    font-family:system-ui,-apple-system,sans-serif;
+                  ">${count}</span>
+                </div>
               `,
               className: 'custom-cluster',
               iconSize: [size, size],
@@ -522,10 +529,9 @@ export default function MapView() {
       </MapContainer>
 
       {/* ═══════════════════════════════════════════════════════════
-          TOP OVERLAY - Back button + Search + Filter badge
+          TOP OVERLAY - Back button + Search
           ═══════════════════════════════════════════════════════════ */}
       <div className="absolute top-3 left-3 right-14 z-[1000] flex items-center gap-2">
-        {/* Back button */}
         <Button
           variant="default"
           size="icon"
@@ -535,15 +541,12 @@ export default function MapView() {
           <ChevronLeft className="h-5 w-5" />
         </Button>
 
-        {/* Search bar */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar centro..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
             className="pl-10 h-10 text-sm bg-background/95 backdrop-blur-sm border-border shadow-lg rounded-xl pr-10"
           />
           {searchText && (
@@ -568,7 +571,7 @@ export default function MapView() {
           variant="default"
           size="icon"
           className="h-10 w-10 shadow-lg bg-background text-foreground hover:bg-muted border border-border rounded-xl relative"
-          onClick={() => setFilterSheetOpen(true)}
+          onClick={() => openSheet('filter')}
         >
           <SlidersHorizontal className="h-5 w-5" />
           {activeFilterCount > 0 && (
@@ -620,12 +623,11 @@ export default function MapView() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
-          BOTTOM OVERLAY - Centros count + List button + Legend
+          BOTTOM OVERLAY - Centros count + List button
           ═══════════════════════════════════════════════════════════ */}
       <div className="absolute bottom-4 left-3 right-3 z-[1000] flex items-end justify-between gap-2 pointer-events-none">
         {/* Left: Info + Legend */}
         <div className="flex flex-col gap-2 pointer-events-auto">
-          {/* Centros count badge */}
           <div className="bg-background/95 backdrop-blur-sm border border-border shadow-lg rounded-xl px-3 py-2">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-primary" />
@@ -634,7 +636,6 @@ export default function MapView() {
                 de {centros.length} centros
               </span>
             </div>
-            {/* Mini stats */}
             <div className="flex gap-2 mt-1.5 flex-wrap">
               {Object.entries(stats.byPrioridad).sort().map(([key, val]) => (
                 <div key={key} className="flex items-center gap-1">
@@ -643,7 +644,6 @@ export default function MapView() {
                 </div>
               ))}
             </div>
-            {/* Tipo legend */}
             <div className="flex gap-2 mt-1">
               {Object.entries(stats.byTipo).sort().map(([key, val]) => (
                 <div key={key} className="flex items-center gap-1">
@@ -684,7 +684,7 @@ export default function MapView() {
           <Button
             variant="default"
             className="h-11 shadow-lg bg-background text-foreground hover:bg-muted border border-border rounded-xl gap-2 px-4"
-            onClick={() => setListSheetOpen(true)}
+            onClick={() => openSheet('list')}
           >
             <List className="h-5 w-5" />
             <span className="font-semibold text-sm">Lista</span>
@@ -698,7 +698,7 @@ export default function MapView() {
       {/* ═══════════════════════════════════════════════════════════
           FILTER SHEET - Slide-up filter panel
           ═══════════════════════════════════════════════════════════ */}
-      <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+      <Sheet open={filterSheetOpen} onOpenChange={(open) => { if (!open) closeSheet(); }}>
         <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
@@ -838,7 +838,7 @@ export default function MapView() {
       {/* ═══════════════════════════════════════════════════════════
           LIST SHEET - Slide-up centros list
           ═══════════════════════════════════════════════════════════ */}
-      <Sheet open={listSheetOpen} onOpenChange={setListSheetOpen}>
+      <Sheet open={listSheetOpen} onOpenChange={(open) => { if (!open) closeSheet(); }}>
         <SheetContent side="bottom" className="h-[75vh] rounded-t-2xl">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
@@ -912,7 +912,7 @@ export default function MapView() {
       {/* ═══════════════════════════════════════════════════════════
           DETAIL SHEET - Centro details
           ═══════════════════════════════════════════════════════════ */}
-      <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
+      <Sheet open={detailOpen} onOpenChange={(open) => { if (!open) closeSheet(); }}>
         <SheetContent className="sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
