@@ -52,3 +52,34 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# Database (contains sensitive data)
+/db/
+
+# Uploads and downloads
+/upload/
+/download/
+
+# Examples
+/examples/
+
+# Scripts
+/scripts/
+
+# Mini services
+/mini-services/
+
+# Worklog
+worklog.md
+
+# Caddy config
+Caddyfile
+
+# Start script
+start-dev.sh
+
+# gh CLI binary
+gh
+
+# Z-AI SDK config
+.z-ai-config
