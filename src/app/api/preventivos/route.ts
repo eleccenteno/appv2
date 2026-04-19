@@ -1,7 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { writeFile, mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
+import path from 'path';
 import { db } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
 import { sanitizeFormData } from '@/lib/sanitize';
+
+// Base directory for storing preventivo photos
+const PHOTOS_BASE_DIR = path.join(process.cwd(), 'fotografias preventivos atw');
+
+/**
+ * Check if a value looks like a file path (vs raw base64 data)
+ */
+function isFilePath(value: string): boolean {
+  // Base64 data URIs start with "data:"
+  if (value.startsWith('data:')) return false;
+  // Raw base64 strings are typically very long and contain only base64 chars
+  // File paths are shorter and contain directory separators or year/provincia structure
+  if (value.length < 500 && (/\//.test(value) || /\\/.test(value) || /^\d{4}/.test(value))) return true;
+  // If it's short and doesn't look like base64, treat as path
+  if (value.length < 500 && !/^[A-Za-z0-9+/=]+$/.test(value)) return true;
+  return false;
+}
+
+/**
+ * Sanitize folder and file names: remove/replace problematic characters
+ */
+function sanitizeName(str: string): string {
+  return str
+    .replace(/[<>:"/\\|?*]/g, '') // Remove invalid filename chars
+    .replace(/\s+/g, ' ')          // Collapse multiple spaces
+    .trim()
+    .substring(0, 100);            // Limit length
+}
 
 // GET /api/preventivos - Listar preventivos con filtros avanzados y datos cruzados
 export async function GET(request: NextRequest) {
@@ -40,21 +71,33 @@ export async function GET(request: NextRequest) {
       if (provincia) (where.centro as Record<string, unknown>).provincia = provincia;
     }
 
-    const preventivos = await db.preventivo.findMany({
-      where,
-      include: {
-        tecnico: { select: { id: true, name: true, username: true, role: true } },
-        centro: {
-          select: {
-            id: true, codigo: true, nombre: true, ciudad: true, provincia: true,
-            empresa: { select: { id: true, nombre: true } },
-            subEmpresa: { select: { id: true, nombre: true } },
+    // Pagination params
+    const rawPage = parseInt(searchParams.get('page') || '1', 10);
+    const rawLimit = parseInt(searchParams.get('limit') || '50', 10);
+    const page = Math.max(1, isNaN(rawPage) ? 1 : rawPage);
+    const limit = Math.min(200, Math.max(1, isNaN(rawLimit) ? 50 : rawLimit));
+    const skip = (page - 1) * limit;
+
+    const [preventivos, total] = await Promise.all([
+      db.preventivo.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          tecnico: { select: { id: true, name: true, username: true, role: true } },
+          centro: {
+            select: {
+              id: true, codigo: true, nombre: true, ciudad: true, provincia: true,
+              empresa: { select: { id: true, nombre: true } },
+              subEmpresa: { select: { id: true, nombre: true } },
+            },
           },
+          fotos: { orderBy: { createdAt: 'asc' } },
         },
-        fotos: { orderBy: { createdAt: 'asc' } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+      }),
+      db.preventivo.count({ where }),
+    ]);
 
     // Deserializar formData de JSON a objeto para cada preventivo
     const result = preventivos.map((p) => {
@@ -67,6 +110,19 @@ export async function GET(request: NextRequest) {
           } catch {
             obj[key] = value;
           }
+        } else if (key === 'fotos' && Array.isArray(value)) {
+          // Transform foto paths to API URLs, keep base64 as-is
+          obj[key] = value.map((foto: Record<string, unknown>) => {
+            const fotoBase64 = foto.fotoBase64 as string;
+            if (fotoBase64 && isFilePath(fotoBase64)) {
+              return {
+                ...foto,
+                fotoBase64: `/api/fotos-preventivo/file?path=${encodeURIComponent(fotoBase64)}`,
+                fotoFilePath: fotoBase64, // Also expose the raw path for reference
+              };
+            }
+            return foto;
+          });
         } else {
           obj[key] = value;
         }
@@ -74,7 +130,17 @@ export async function GET(request: NextRequest) {
       return obj;
     });
 
-    return NextResponse.json({ preventivos: result });
+    const totalPages = Math.ceil(total / limit);
+    return NextResponse.json({
+      preventivos: result,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+    });
   } catch (error) {
     console.error('Error fetching preventivos:', error);
     return NextResponse.json({ error: 'Error al obtener preventivos' }, { status: 500 });
@@ -115,6 +181,12 @@ export async function POST(request: NextRequest) {
       resolvedCentroId = centroByCodigo.id;
     }
 
+    // Fetch full centro data for file path generation
+    const centroData = await db.centro.findUnique({ where: { id: resolvedCentroId } });
+    if (!centroData) {
+      return NextResponse.json({ error: 'Centro no encontrado' }, { status: 404 });
+    }
+
     const existingPreventivo = await db.preventivo.findFirst({
       where: {
         centroId: resolvedCentroId,
@@ -136,6 +208,64 @@ export async function POST(request: NextRequest) {
     const sanitizedFields = fields ? sanitizeFormData(fields) : null;
     const formDataJson = sanitizedFields ? JSON.stringify(sanitizedFields) : null;
 
+    // Process fotosAdicionales: save base64 images to filesystem, store only relative paths
+    let processedFotos: { fotoBase64: string; descripcion: string | null; categoria: string | null }[] | undefined;
+    if (fotosAdicionales && fotosAdicionales.length > 0) {
+      const yearStr = String(fechaDate.getFullYear());
+      const safeProvincia = sanitizeName(centroData.provincia || 'SinProvincia');
+      const safeCentroNombre = sanitizeName(centroData.nombre);
+      const safeCentroCodigo = sanitizeName(centroData.codigo);
+      const centroFolder = `${safeCentroNombre} - ${safeCentroCodigo}`;
+
+      processedFotos = [];
+      for (let i = 0; i < fotosAdicionales.length; i++) {
+        const f = fotosAdicionales[i] as { fotoBase64: string; descripcion?: string; categoria?: string };
+        let storedValue = f.fotoBase64;
+
+        // Only save to filesystem if it looks like base64 data
+        if (f.fotoBase64 && !isFilePath(f.fotoBase64)) {
+          try {
+            // Parse base64 data (strip data URI prefix if present)
+            let base64Data = f.fotoBase64;
+            const base64Match = base64Data.match(/^data:image\/\w+;base64,(.+)$/);
+            if (base64Match) {
+              base64Data = base64Match[1];
+            }
+
+            // Build filename using categoria or 'adicional'
+            const fieldLabel = sanitizeName(f.categoria || 'adicional');
+            const fileName = `${fieldLabel}_${i + 1}.jpg`;
+
+            // Build folder path: fotografias preventivos atw / {year} / {provincia} / {centroNombre} - {centroCodigo}
+            const folderPath = path.join(PHOTOS_BASE_DIR, yearStr, safeProvincia, centroFolder);
+
+            // Create directories if they don't exist
+            if (!existsSync(folderPath)) {
+              await mkdir(folderPath, { recursive: true });
+            }
+
+            // Write the file
+            const filePath = path.join(folderPath, fileName);
+            const buffer = Buffer.from(base64Data, 'base64');
+            await writeFile(filePath, buffer);
+
+            // Store the relative path
+            storedValue = path.join(yearStr, safeProvincia, centroFolder, fileName);
+          } catch (fileError) {
+            console.error('Error saving photo to filesystem, falling back to base64 storage:', fileError);
+            // Fall back to storing base64 if file save fails
+            storedValue = f.fotoBase64;
+          }
+        }
+
+        processedFotos.push({
+          fotoBase64: storedValue,
+          descripcion: f.descripcion || null,
+          categoria: f.categoria || null,
+        });
+      }
+    }
+
     const preventivo = await db.preventivo.create({
       data: {
         procedimiento,
@@ -152,13 +282,9 @@ export async function POST(request: NextRequest) {
         tecnicoId,
         centroId: resolvedCentroId,
         formData: formDataJson,
-        fotos: fotosAdicionales
+        fotos: processedFotos
           ? {
-              create: fotosAdicionales.map((f: { fotoBase64: string; descripcion?: string; categoria?: string }) => ({
-                fotoBase64: f.fotoBase64,
-                descripcion: f.descripcion || null,
-                categoria: f.categoria || null,
-              })),
+              create: processedFotos,
             }
           : undefined,
       },
@@ -175,14 +301,28 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Deserializar formData para la respuesta
-    const result = { ...preventivo };
+    // Deserializar formData para la respuesta and transform foto paths to API URLs
+    const result: Record<string, unknown> = { ...preventivo };
     if (result.formData && typeof result.formData === 'string') {
       try {
-        (result as Record<string, unknown>).formData = JSON.parse(result.formData);
+        result.formData = JSON.parse(result.formData as string);
       } catch {
         // Si falla, dejar como string
       }
+    }
+    // Transform foto file paths to API URLs in the response
+    if (Array.isArray(result.fotos)) {
+      result.fotos = (result.fotos as Record<string, unknown>[]).map((foto) => {
+        const fotoBase64 = foto.fotoBase64 as string;
+        if (fotoBase64 && isFilePath(fotoBase64)) {
+          return {
+            ...foto,
+            fotoBase64: `/api/fotos-preventivo/file?path=${encodeURIComponent(fotoBase64)}`,
+            fotoFilePath: fotoBase64,
+          };
+        }
+        return foto;
+      });
     }
 
     return NextResponse.json({
@@ -242,14 +382,28 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    // Deserializar formData para la respuesta
-    const result = { ...preventivo };
+    // Deserializar formData para la respuesta and transform foto paths to API URLs
+    const result: Record<string, unknown> = { ...preventivo };
     if (result.formData && typeof result.formData === 'string') {
       try {
-        (result as Record<string, unknown>).formData = JSON.parse(result.formData);
+        result.formData = JSON.parse(result.formData as string);
       } catch {
         // Si falla, dejar como string
       }
+    }
+    // Transform foto file paths to API URLs in the response
+    if (Array.isArray(result.fotos)) {
+      result.fotos = (result.fotos as Record<string, unknown>[]).map((foto) => {
+        const fotoBase64 = foto.fotoBase64 as string;
+        if (fotoBase64 && isFilePath(fotoBase64)) {
+          return {
+            ...foto,
+            fotoBase64: `/api/fotos-preventivo/file?path=${encodeURIComponent(fotoBase64)}`,
+            fotoFilePath: fotoBase64,
+          };
+        }
+        return foto;
+      });
     }
 
     return NextResponse.json({ preventivo: result, message: 'Preventivo actualizado exitosamente' });

@@ -58,6 +58,7 @@ model Centro {
   tipoSuministro      String?
   parcelaEdificio     String?
   observaciones       String?
+  datosJson           String?     // JSON string: { [sectionKey]: { [fieldKey]: value } } for DatosCentros overrides
   activo              Boolean     @default(true)
   empresaId           String
   subEmpresaId        String?

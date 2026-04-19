@@ -188,10 +188,12 @@ export async function POST(request: NextRequest) {
         if (!tecnicoId && tecnicoNombre) {
           const displayName = tecnicoMapping[tecnicoNombre] || tecnicoNombre.charAt(0).toUpperCase() + tecnicoNombre.slice(1);
           try {
+            // Generate a secure random temporary password
+            const tempPassword = `Tmp${Math.random().toString(36).slice(2, 10)}!`;
             const newEmp = await db.employee.create({
               data: {
                 username: tecnicoNombre.replace(/\s+/g, '_').toLowerCase(),
-                password: await hashPassword('Ecenteno00'),
+                password: await hashPassword(tempPassword),
                 name: displayName,
                 role: 'empleado',
                 tipo: 'Empleado',
@@ -201,6 +203,7 @@ export async function POST(request: NextRequest) {
             tecnicoId = newEmp.id;
             employeeMap.set(tecnicoNombre, newEmp.id);
             employeeMap.set(displayName.toLowerCase(), newEmp.id);
+            results.errors.push(`INFO: Nuevo empleado "${displayName}" creado con contraseña temporal (cambiar en panel)`);
           } catch {
             results.skipped++;
             results.errors.push(`Fila ${i + 2}: No se pudo crear técnico "${p.tecnico}"`);

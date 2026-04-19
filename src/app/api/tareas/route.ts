@@ -34,23 +34,35 @@ export async function GET(request: NextRequest) {
       if (provincia) (where.centro as Record<string, unknown>).provincia = provincia;
     }
 
-    const tareas = await db.tarea.findMany({
-      where,
-      include: {
-        centro: {
-          select: {
-            id: true, codigo: true, nombre: true, ciudad: true, provincia: true,
-            empresa: { select: { id: true, nombre: true } },
-            subEmpresa: { select: { id: true, nombre: true } },
+    // Pagination params
+    const rawPage = parseInt(searchParams.get('page') || '1', 10);
+    const rawLimit = parseInt(searchParams.get('limit') || '50', 10);
+    const page = Math.max(1, isNaN(rawPage) ? 1 : rawPage);
+    const limit = Math.min(200, Math.max(1, isNaN(rawLimit) ? 50 : rawLimit));
+    const skip = (page - 1) * limit;
+
+    const [tareas, total] = await Promise.all([
+      db.tarea.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          centro: {
+            select: {
+              id: true, codigo: true, nombre: true, ciudad: true, provincia: true,
+              empresa: { select: { id: true, nombre: true } },
+              subEmpresa: { select: { id: true, nombre: true } },
+            },
           },
+          empleado: { select: { id: true, name: true, username: true, role: true } },
+          fotos: { orderBy: { createdAt: 'asc' } },
         },
-        empleado: { select: { id: true, name: true, username: true, role: true } },
-        fotos: { orderBy: { createdAt: 'asc' } },
-      },
-      orderBy: [
-        { createdAt: 'desc' },
-      ],
-    });
+        orderBy: [
+          { createdAt: 'desc' },
+        ],
+      }),
+      db.tarea.count({ where }),
+    ]);
 
     // Deserializar formData de JSON a objeto para cada tarea
     const result = tareas.map((t) => {
@@ -67,7 +79,17 @@ export async function GET(request: NextRequest) {
       return plain;
     });
 
-    return NextResponse.json({ tareas: result });
+    const totalPages = Math.ceil(total / limit);
+    return NextResponse.json({
+      tareas: result,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+    });
   } catch (error) {
     console.error('Error fetching tareas:', error);
     return NextResponse.json({ error: 'Error al obtener tareas' }, { status: 500 });

@@ -36,31 +36,43 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const centros = await db.centro.findMany({
-      where,
-      include: {
-        empresa: { select: { id: true, nombre: true, slug: true } },
-        subEmpresa: { select: { id: true, nombre: true, slug: true } },
-        _count: {
-          select: { preventivos: true, tareas: true },
+    // Pagination params
+    const rawPage = parseInt(searchParams.get('page') || '1', 10);
+    const rawLimit = parseInt(searchParams.get('limit') || '50', 10);
+    const page = Math.max(1, isNaN(rawPage) ? 1 : rawPage);
+    const limit = Math.min(200, Math.max(1, isNaN(rawLimit) ? 50 : rawLimit));
+    const skip = (page - 1) * limit;
+
+    const [centros, total] = await Promise.all([
+      db.centro.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          empresa: { select: { id: true, nombre: true, slug: true } },
+          subEmpresa: { select: { id: true, nombre: true, slug: true } },
+          _count: {
+            select: { preventivos: true, tareas: true },
+          },
+          ...(includeStats
+            ? {
+                preventivos: {
+                  where: { estado: 'pendiente' },
+                  select: { id: true },
+                  take: 1,
+                },
+                tareas: {
+                  where: { estado: 'pendiente' },
+                  select: { id: true },
+                  take: 1,
+                },
+              }
+            : {}),
         },
-        ...(includeStats
-          ? {
-              preventivos: {
-                where: { estado: 'pendiente' },
-                select: { id: true },
-                take: 1,
-              },
-              tareas: {
-                where: { estado: 'pendiente' },
-                select: { id: true },
-                take: 1,
-              },
-            }
-          : {}),
-      },
-      orderBy: { nombre: 'asc' },
-    });
+        orderBy: { nombre: 'asc' },
+      }),
+      db.centro.count({ where }),
+    ]);
 
     // Obtener ciudades y provincias únicas para filtros
     const ciudades = await db.centro.findMany({
@@ -77,13 +89,20 @@ export async function GET(request: NextRequest) {
       orderBy: { provincia: 'asc' },
     });
 
+    const totalPages = Math.ceil(total / limit);
     return NextResponse.json({
       centros,
       filtros: {
         ciudades: ciudades.map(c => c.ciudad).filter(Boolean),
         provincias: provincias.map(p => p.provincia).filter(Boolean),
       },
-      total: centros.length,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasMore: page < totalPages,
+      },
     });
   } catch (error) {
     console.error('Error fetching centros:', error);

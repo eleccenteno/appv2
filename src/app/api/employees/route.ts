@@ -21,35 +21,57 @@ export async function GET(request: NextRequest) {
     if (tipo) where.tipo = tipo;
     if (activo !== null && activo !== undefined) where.activo = activo === 'true';
 
-    const employees = await db.employee.findMany({
-      where,
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        nombreCompleto: true,
-        email: true,
-        phone: true,
-        dni: true,
-        foto: true,
-        role: true,
-        tipo: true,
-        vehiculoMarca: true,
-        vehiculoModelo: true,
-        vehiculoMatricula: true,
-        activo: true,
-        createdAt: true,
-        _count: includeStats
-          ? { select: { preventivos: true, tareasAsignadas: true } }
-          : false,
-        vehiculosAsignados: includeStats
-          ? { where: { activa: true }, include: { vehiculo: { select: { marca: true, modelo: true, matricula: true } } }, take: 1 }
-          : false,
-      },
-      orderBy: { name: 'asc' },
-    });
+    // Pagination params
+    const rawPage = parseInt(searchParams.get('page') || '1', 10);
+    const rawLimit = parseInt(searchParams.get('limit') || '50', 10);
+    const page = Math.max(1, isNaN(rawPage) ? 1 : rawPage);
+    const limit = Math.min(200, Math.max(1, isNaN(rawLimit) ? 50 : rawLimit));
+    const skip = (page - 1) * limit;
 
-    return NextResponse.json({ employees });
+    const [employees, total] = await Promise.all([
+      db.employee.findMany({
+        where,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          username: true,
+          name: true,
+          nombreCompleto: true,
+          email: true,
+          phone: true,
+          dni: true,
+          foto: true,
+          role: true,
+          tipo: true,
+          vehiculoMarca: true,
+          vehiculoModelo: true,
+          vehiculoMatricula: true,
+          activo: true,
+          createdAt: true,
+          _count: includeStats
+            ? { select: { preventivos: true, tareasAsignadas: true } }
+            : false,
+          vehiculosAsignados: includeStats
+            ? { where: { activa: true }, include: { vehiculo: { select: { marca: true, modelo: true, matricula: true } } }, take: 1 }
+            : false,
+        },
+        orderBy: { name: 'asc' },
+      }),
+      db.employee.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    return NextResponse.json({
+      employees,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+    });
   } catch (error) {
     console.error('Error fetching employees:', error);
     return NextResponse.json({ error: 'Error al obtener empleados' }, { status: 500 });
@@ -106,6 +128,11 @@ export async function POST(request: NextRequest) {
 }
 
 // PUT /api/employees - Actualizar empleado
+const EMPLOYEE_ALLOWED_FIELDS = [
+  'username', 'password', 'name', 'nombreCompleto', 'email', 'phone', 'dni',
+  'role', 'tipo', 'vehiculoMarca', 'vehiculoModelo', 'vehiculoMatricula', 'activo',
+];
+
 export async function PUT(request: NextRequest) {
   const authUser = await authenticateRequest(request);
   if (!authUser) {
@@ -114,22 +141,30 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, ...data } = body;
+    const { id, ...rest } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID del empleado es requerido' }, { status: 400 });
     }
 
+    // Build update data from whitelisted fields only (Mass Assignment fix)
+    const updateData: Record<string, unknown> = {};
+    for (const field of EMPLOYEE_ALLOWED_FIELDS) {
+      if (rest[field] !== undefined) {
+        updateData[field] = rest[field];
+      }
+    }
+
     // Hash password if provided and non-empty
-    if (data.password && data.password.trim() !== '') {
-      data.password = await hashPassword(data.password);
+    if (updateData.password && typeof updateData.password === 'string' && (updateData.password as string).trim() !== '') {
+      updateData.password = await hashPassword(updateData.password as string);
     } else {
-      delete data.password;
+      delete updateData.password;
     }
 
     const employee = await db.employee.update({
       where: { id },
-      data,
+      data: updateData,
       select: {
         id: true, username: true, name: true, nombreCompleto: true, email: true, phone: true, dni: true, role: true, tipo: true,
         vehiculoMarca: true, vehiculoModelo: true, vehiculoMatricula: true, activo: true,

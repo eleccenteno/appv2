@@ -115,6 +115,10 @@ export default function DatosCentrosView() {
   const [editedData, setEditedData] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
+  // DB overrides state: datosJson from the DB for the selected centro
+  const [dbOverrides, setDbOverrides] = useState<Record<string, Record<string, string>>>({});
+  const [loadingOverrides, setLoadingOverrides] = useState(false);
+
   // Fetch data
   useEffect(() => {
     const fetchData = async () => {
@@ -226,15 +230,44 @@ export default function DatosCentrosView() {
     setDisplayCount(PAGE_SIZE);
   }, [searchQuery, filterProvincia, filterPrioridad, filterTipoCentro]);
 
-  const handleSelectCentro = useCallback((centro: CentroData) => {
+  const handleSelectCentro = useCallback(async (centro: CentroData) => {
     setSelectedCentro(centro);
     setActiveTab(0);
     setEditedData({});
+    setDbOverrides({});
+
+    // Fetch DB overrides for this centro
+    setLoadingOverrides(true);
+    try {
+      const token = useAppStore.getState().token;
+      const res = await fetch(`/api/centros?codigo=${encodeURIComponent(centro.codigo)}`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const dbCentro = data.centros?.[0];
+        if (dbCentro?.datosJson) {
+          try {
+            const parsed = JSON.parse(dbCentro.datosJson);
+            setDbOverrides(parsed);
+          } catch {
+            setDbOverrides({});
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching centro overrides:', error);
+    } finally {
+      setLoadingOverrides(false);
+    }
   }, []);
 
   const handleBack = useCallback(() => {
     setSelectedCentro(null);
     setEditedData({});
+    setDbOverrides({});
   }, []);
 
   const handleEdit = useCallback((sectionKey: string, colKey: string, value: string) => {
@@ -247,22 +280,87 @@ export default function DatosCentrosView() {
     (sectionKey: string, colKey: string): string => {
       if (!selectedCentro) return '';
       const dataKey = `${sectionKey}.${colKey}`;
+      // Priority: local edits > DB overrides > static JSON data
       if (dataKey in editedData) return editedData[dataKey];
+      if (dbOverrides[sectionKey]?.[colKey] !== undefined) return dbOverrides[sectionKey][colKey];
       const section = selectedCentro[sectionKey as keyof CentroData] as Record<string, string>;
       return section?.[colKey] ?? '';
     },
-    [selectedCentro, editedData]
+    [selectedCentro, editedData, dbOverrides]
   );
 
   const handleSave = useCallback(async () => {
-    setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    setSaving(false);
-    toast({
-      title: 'Datos guardados',
-      description: 'Los cambios han sido guardados correctamente.',
+    if (!selectedCentro) return;
+
+    const token = useAppStore.getState().token;
+    if (!token) {
+      toast({
+        title: 'Error',
+        description: 'No hay sesión activa. Vuelve a iniciar sesión.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Build edits array from editedData
+    const edits = Object.entries(editedData).map(([dataKey, value]) => {
+      const [sectionKey, ...rest] = dataKey.split('.');
+      const fieldKey = rest.join('.');
+      return { sectionKey, fieldKey, value };
     });
-  }, [toast]);
+
+    if (edits.length === 0) {
+      toast({
+        title: 'Sin cambios',
+        description: 'No hay cambios para guardar.',
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch('/api/centros/datos', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          codigo: selectedCentro.codigo,
+          edits,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Error ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Update DB overrides with the saved data
+      if (data.datosJson) {
+        setDbOverrides(data.datosJson);
+      }
+
+      // Clear local edits since they're now persisted
+      setEditedData({});
+
+      toast({
+        title: 'Datos guardados',
+        description: `${edits.length} campo${edits.length > 1 ? 's' : ''} guardado${edits.length > 1 ? 's' : ''} correctamente.`,
+      });
+    } catch (error) {
+      console.error('Error saving datos:', error);
+      toast({
+        title: 'Error al guardar',
+        description: error instanceof Error ? error.message : 'No se pudieron guardar los cambios.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  }, [selectedCentro, editedData, toast]);
 
   const getPrioridadBadge = (prioridad: string) => {
     switch (prioridad) {
@@ -807,7 +905,7 @@ export default function DatosCentrosView() {
           {isAdmin && (
             <Button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || Object.keys(editedData).length === 0}
               className="bg-teal-600 hover:bg-teal-700 shrink-0"
               size="sm"
             >
@@ -816,7 +914,7 @@ export default function DatosCentrosView() {
               ) : (
                 <Save className="h-4 w-4 mr-1.5" />
               )}
-              Guardar
+              {saving ? 'Guardando...' : Object.keys(editedData).length > 0 ? `Guardar (${Object.keys(editedData).length})` : 'Guardar'}
             </Button>
           )}
         </div>
@@ -845,9 +943,14 @@ export default function DatosCentrosView() {
         {/* Tab content */}
         <Card className="border shadow-sm">
           <CardHeader className="pb-3 border-b">
-            <h2 className="text-base font-semibold text-foreground">
-              {sections[activeTab]?.label}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-semibold text-foreground">
+                {sections[activeTab]?.label}
+              </h2>
+              {loadingOverrides && (
+                <Loader2 className="h-4 w-4 text-teal-600 animate-spin" />
+              )}
+            </div>
           </CardHeader>
           <CardContent className="pt-4">
             {sections[activeTab] && renderSectionContent(sections[activeTab])}
